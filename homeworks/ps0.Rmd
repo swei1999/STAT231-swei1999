@@ -1,6 +1,6 @@
 ---
 title: 'STAT 231: Problem Set 0'
-author: "YOUR NAME HERE"
+author: "Sean Wei"
 date: "due by 5 PM on Thursday, August 27"
 output:
   pdf_document: default
