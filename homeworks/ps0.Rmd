@@ -82,7 +82,7 @@ datasaurus_dozen %>%
 
 Calculate the correlation coefficient between `x` and `y` for the `dino` dataset.  Below is the code you will need to complete this exercise. Basically, the answer is already given, but you need to include relevant bits in your Rmd document and successfully knit it and view the results.  What does this correlation coefficient imply about the relationship between `x` and `y` in the `dino` dataset? 
 
-> RESPONSE: 
+> RESPONSE: The correlation coefficient implies that there is a very weak negative linear relationship between x and y in the dino dataset.
  
 ```{r}
 # Start with the `datasaurus_dozen` and pipe it into the `filter` function to filter for observations where `dataset == "dino"`. Store the resulting filtered data frame as a new data frame called `dino_data`.
@@ -101,7 +101,7 @@ If this seems like a lot, don't worry.  You will learn about the philosophy of b
 
 What do you notice now about the relationship between x and y?
 
-> RESPONSE:
+> RESPONSE: There does not seem to be any visible relationship between x and y, as the output looks like a dinosaur.
 
 ```{r fig.fullwidth=TRUE}
 ggplot(data = dino_data, mapping = aes(x = x, y = y)) +
@@ -115,18 +115,24 @@ ggplot(data = dino_data, mapping = aes(x = x, y = y)) +
 
 Calculate the correlation coefficient between `x` vs. `y` for the `star` dataset. You can (and should) reuse code we introduced above, just replace the dataset name with the desired dataset. How does this value compare to the correlation coefficient from the `dino` dataset?
 
-> RESPONSE: 
+> RESPONSE: The correlation coefficients are very similar.
 
 ```{r}
+star_data <- datasaurus_dozen %>%
+  filter(dataset == "star")
 
+# Calculate a summary statistic that we call `r` equal to the correlation coefficient between `x` and `y` for the `star` dataset 
+star_data %>%
+  summarize(r = cor(x, y))
 ```
 
 Then, plot `y` versus `x` for the `star` dataset.  Does the plot look the same as the plot of the `dino` data?
 
-> RESPONSE:
+> RESPONSE: No, the plot looks like a star.
 
 ```{r}
-
+ggplot(data = star_data, mapping = aes(x = x, y = y)) +
+  geom_point()
 ```
 
 
@@ -137,18 +143,24 @@ Then, plot `y` versus `x` for the `star` dataset.  Does the plot look the same a
 
 Calculate the correlation coefficient between `x` vs. `y` for the `circle` dataset. You can (and should) reuse code we introduced above, just replace the dataset name with the desired dataset. How does this value compare to the correlation coefficients from the other two datasets?
 
-> RESPONSE: 
+> RESPONSE: The correlation coefficient is very similar to the other two datasets.
 
 ```{r}
+circle_data <- datasaurus_dozen %>%
+  filter(dataset == "circle")
 
+# Calculate a summary statistic that we call `r` equal to the correlation coefficient between `x` and `y` for the `circle` dataset 
+circle_data %>%
+  summarize(r = cor(x, y))
 ```
 
 Then, plot `y` versus `x` for the `circle` dataset.  Does the plot look the same as either plot from the other two datasets?
 
-> RESPONSE:
+> RESPONSE: No, the plot is a circle.
 
 ```{r}
-
+ggplot(data = circle_data, mapping = aes(x = x, y = y)) +
+  geom_point()
 ```
 
 *You should pause again, commit changes with the commit message "Added answer for Ex 4", and push.*
@@ -177,7 +189,7 @@ datasaurus_dozen %>%
 
 What do you notice?  Is the correlation coefficiant an appropriate summary for any of these datasets?  Why or why not?
 
-> RESPONSE:
+> RESPONSE: No, because there are no relationships in any of these datasets since they are all just drawing pictures.
 
 
 *You should pause again, commit changes with the commit message "Added answer for Ex 5", and push.*
