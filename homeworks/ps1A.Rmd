@@ -1,6 +1,6 @@
 ---
 title: 'STAT 231: Problem Set 1A'
-author: "YOUR NAME HERE"
+author: "Sean Wei"
 date: "due by 5 PM on Monday, August 31"
 output: pdf_document
 ---
@@ -47,32 +47,37 @@ Figure 3.3 in Section 3.1.1 shows a scatterplot that uses both location and labe
 data(CIACountries)
 
 # define the plot object
-g <- 
+g <- ggplot(data = CIACountries, aes(y = gdp, x = educ)) 
   
 # print the plot 
-g
+g + geom_text(aes(label = country, color = net_users), size = 3)
 ```
 
 ### b.
 Now, update the plot with more informative labels.  Label the x-axis "% of GDP spent on education" and the y-axis "Gross Domestic Product (GDP)".  Hint: see Section 3.2.2 for an example of one way to label the axes.
 
 ```{r}
-
-
+g + geom_text(aes(label = country, color = net_users), size = 3) + 
+  labs(x="% of GDP spent on education", y="Gross Domestic Product (GDP)")
 ```
 
 ### c.
 Next, move the legend so that it's located on the top of the plot as opposed to the right of the plot.  Hint: see Section 3.1.4 for an example on how to change the legend position.
 
 ```{r}
-
+g + geom_text(aes(label = country, color = net_users), size = 3) + 
+  labs(x="% of GDP spent on education", y="Gross Domestic Product (GDP)") + 
+    theme(legend.position = "top")
 ```
 
 ### d.
 Lastly, Section 3.1.2 discusses *scale*, and demonstrates how to display GDP on a logarithmic scale to better discern differences in GDP.  Update the figure so GDP is on a log10 scale.  
 
 ```{r}
-
+g + geom_text(aes(label = country, color = net_users), size = 3) + 
+  labs(x="% of GDP spent on education", y="Gross Domestic Product (GDP)") + 
+    theme(legend.position = "top") + 
+      coord_trans(y = "log10")
 ```
 
 
@@ -82,7 +87,7 @@ Lastly, Section 3.1.2 discusses *scale*, and demonstrates how to display GDP on 
 ### a.
 Consider Figure 3.7 in Section 3.2.1.  What does `reorder(drg, mean_charge)` do?  Recreate the plot, but use `x = drg` instead of `x = reorder(drg, mean_charge)`.  What happens?
 
-> ANSWER: 
+> ANSWER: The reorder() function sorts drg in order of their average charge. Using x = drg, it sorts by drg from the smallest value to the largest.
 
 ```{r}
 data(MedicareCharges)
@@ -91,8 +96,14 @@ ChargesNJ <- MedicareCharges %>%
   filter(stateProvider == "NJ")
 
 # create the plot object
-p <- 
-  
+p <- ggplot(
+  data = ChargesNJ, 
+  aes(x = drg, y = mean_charge)
+) +
+  geom_col(fill = "gray") +
+  ylab("Statewide Average Charges ($)") + 
+  xlab("Medical Procedure (DRG)") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  
   
 # print the plot
 p
@@ -101,10 +112,13 @@ p
 ### b.
 Replace `x = drg` with `x = reorder(drg, mean_charge)`, but also remove the `theme()` line.  Now what happens?  What was the purpose of the `theme()` line?  Hint: You may need to knit the document and look at the pdf to better observe what's happening.
 
-> ANSWER:  
+> ANSWER: Without the theme() line, the values on the x-axis are written horizontally instead of vertically, making it impossible to see the values. Using theme() with ggplot helps customize the non-data components of the plots. 
 
 ```{r}
-
+ggplot(data = ChargesNJ, aes(x=reorder(drg, mean_charge), y = mean_charge)) +
+  geom_col(fill = "gray") +
+  ylab("Statewide Average Charges ($)") + 
+  xlab("Medical Procedure (DRG)")
 ```
 
 
@@ -113,7 +127,7 @@ Replace `x = drg` with `x = reorder(drg, mean_charge)`, but also remove the `the
 
 As you read through (and, better yet -- code along with (not required, but useful practice!)) -- the extended example on historical baby names in section 3.3.1, write down two questions you have about any of the R code used in that example.  (Your questions could be about what a specific part of the code -- ggplot or not -- is actually doing, or a more general question about any of the commands used.)  Please be thoughtful about your questions; we will use them (anonymously) in an exercise in class this week.
 
-> ANSWER: 
+> ANSWER: 1) What are the differences between tibble and tribble? and 2) I'm a little confused of the use of the %+% operator, what is it exactly doing in the code provided: g <- g %+% SAT_2010?
 
 ```{r}
 # to get you started following along . . .
