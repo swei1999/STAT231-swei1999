@@ -1,0 +1,159 @@
+---
+title: "UN Votes (Round 2)"
+author: ''
+date: "September 1, 2020"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+The purpose of this mini-lab is for you to experiment with some of the basic capabilities of `ggplot`, such as changing the plotting symbols and colors.  For our purposes today, you can jump to the Analysis section.
+
+```{r, warning=FALSE, message=FALSE}
+library(unvotes)
+library(tidyverse)
+library(lubridate)
+library(DT)
+```
+
+## Data
+
+The unvotes package provides three datasets we can work with: `un_roll_calls`, 
+`un_roll_call_issues`, and `un_votes`. Each of these datasets contains a 
+variable called `rcid`, the roll call id, which can be used as a unique 
+identifier to join them with each other.
+
+- The `un_votes` dataset provides information on the voting history of the 
+United Nations General Assembly. It contains one row for each country-vote pair.
+
+```{r}
+un_votes
+```
+
+- The `un_roll_calls` dataset contains information on each roll call vote of 
+the United Nations General Assembly.
+
+```{r}
+un_roll_calls
+```
+
+- The `un_roll_call_issues` dataset contains (topic) classifications of roll 
+call votes of the United Nations General Assembly. Many votes had no topic, 
+and some have more than one.
+
+```{r}
+un_roll_call_issues
+```
+
+## Analysis
+
+Recall last week we created a visualization that displayed how the voting record of the United States changed over time on a variety of issues, and compared it to another country.  To focus on learning how to change features such as shapes, colors, and line types with `ggplot`, we'll remove the facetting for now and focus on one issue.  Below is the code to produce a plot just for the "Human rights" issue, and comparing three countries instead of two.  Feel free to change the three countries to other countries if you wish (countries are listed in the Appendix).  This time, I've broken the code into two parts: the first creates a new dataset called `un_votes_hr` and the second generates the plot with `ggplot`. 
+
+```{r, fig.width=10, warning=FALSE}
+# ready the data for plotting
+un_votes_hr <- un_votes %>%
+  filter(country %in% c("United States of America", "Brazil", "Canada")) %>%
+  inner_join(un_roll_calls, by = "rcid") %>%
+  inner_join(un_roll_call_issues, by = "rcid") %>%
+  group_by(country, year = year(date), issue) %>%
+  summarize(
+    votes = n(),
+    percent_yes = mean(vote == "yes")
+    ) %>%
+  filter(votes > 5) %>%  # only use records where there are more than 5 votes
+  filter(issue == "Human rights") # only keep records related to human rights issue
+
+# plot the data  
+ggplot(data = un_votes_hr
+       , mapping = aes(x = year, y = percent_yes, color = country)) +
+    geom_point() +
+    geom_smooth(method = "loess", se = FALSE) +
+    labs(
+      title = "Percentage of 'Yes' votes  on human rights issues in the UN General Assembly",
+      subtitle = "1946 to 2015",
+      y = "% Yes",
+      x = "Year",
+      color = "Country"
+    )
+```
+
+
+
+### Exercise 1. Shapes and sizes
+
+The default symbol for `geom_point` is, well, a point.  But you can change the symbol shape and size using the `shape = ` and `size =` options, respectively, within the `geom_point` function.  
+
+- Try adding `shape = 2` to the geom_point() function.  What happens?    
+- What happens if you add `shape = "*", size = 5`?  
+- You can also specify different shapes for the different countries.  Since country is a variable in our dataset, we can use the `aes` function within `geom_point` to specify different shapes for different countries.  See if you can figure out the correct syntax to do this.  Can you also figure out how to make the legend nicer? (Hint: add something to the `labs` function.)
+
+```{r, fig.width=10}
+
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Ex 1", and push.*
+
+### Exercise 2. Line types
+
+Similarly, the default line type for `geom_smooth` is a solid line.  You can change the line type and thickness using the `lty = ` and `size = ` options, respectively, within the `geom_smooth` function.  
+
+- Copy and paste the code from your last figure created in Exercise 1.  
+- Update the figure using the `aes` function within `geom_smooth` so that each country has a different line type.  
+- Can you also figure out how to clean up the legend?
+
+
+```{r, fig.width=10}
+
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Ex 2", and push.*
+
+### Exercise 3. Colors
+
+There are many, many, many different ways to change the colors of points, lines, etc. in `ggplot`.  Today we'll explore just a few of them (using color brewer -- highly recommended! these color schemes were designed by a professional to help people choose good color schemes for their graphs -- and manually).  
+
+Color Brewer:
+
+- Copy and paste the code from your last figure created in Exercise 2.
+- Add a layer `scale_color_brewer()` after the last line (don't forget to add a plus sign on the line above!).  What happens?
+- Within the `scale_color_brewer()` function, add the options `type = "div"` and `palette = 1`.  Is this a good color scheme for this figure?  Why or why not? (Can you think of a figure for which this would be a good color scheme?)
+- Check out https://ggplot2.tidyverse.org/reference/scale_brewer.html for more information about sequential, diverging, and qualitative color schemes available from Color Brewer.  This site is also helpful to visualize the different palettes: http://colorbrewer2.org/#type=diverging&scheme=BrBG&n=3. (Page 21 of MDSR also displays the palettes available through color brewer.)  Does a sequential, diverging, or qualitative color scheme make sense for this figure?  Update the figure with one of the palettes from the appropriate scheme.
+
+Manual:
+
+- Replace the `scale_color_brewer` line with `scale_color_manual(values = c("green", "purple", "blue"))`.  Notice there are three colors I'm specifying for the three countries.
+- Don't like those colors?  Get more specific by specifying with hex color codes.  Try replacing "green", "purple" and "blue" with "#05a05a", "#844185", "#024a81", respectively.
+- How to identify hex codes for more colors?  Check out: https://www.color-hex.com/.  Create one last figure with three colors of your choice assigned manually.
+
+```{r, fig.width=10}
+
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Ex 3", and push.*
+
+
+## References
+
+1. David Robinson (2017). unvotes: United Nations General Assembly Voting Data. 
+R package version 0.2.0. https://CRAN.R-project.org/package=unvotes.
+2. Erik Voeten "Data and Analyses of Voting in the UN General Assembly" 
+Routledge Handbook of International Organization, edited by Bob Reinalda 
+(published May 27, 2013).
+3. Much of the analysis has been modeled on the examples presented in the 
+[unvotes package vignette](https://cran.r-project.org/web/packages/unvotes/vignettes/unvotes.html).
+
+## Appendix {#appendix}
+
+Below is a list of countries in the dataset:
+
+```{r list-countries}
+un_votes %>% 
+  select(country) %>%
+  arrange(country) %>% 
+  distinct() %>%
+  datatable()
+```
