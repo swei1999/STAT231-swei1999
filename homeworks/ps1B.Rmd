@@ -1,0 +1,111 @@
+---
+title: "STAT 231: Problem Set 1B"
+author: "Sean Wei"
+date: "due by 5 PM on Friday, September 4"
+output: pdf_document
+---
+
+Series B homework assignments are designed to help you further ingest and practice the material covered in class over the past week(s).  You are encouraged to work with other students, but all code must be written by you and you must indicate below who you discussed the assignment with (if anyone).  
+
+Steps to proceed:
+
+\begin{enumerate}
+\item In RStudio, go to File > Open Project, navigate to the folder with the course-content repo, select the course-content project (course-content.Rproj), and click "Open" 
+\item Pull the course-content repo (e.g. using the blue-ish down arrow in the Git tab in upper right window)
+\item Copy ps1B.Rmd from the course repo to your repo (see page 6 of the GitHub Classroom Guide for Stat231 if needed)
+\item Close the course-content repo project in RStudio
+\item Open YOUR repo project in RStudio
+\item In the ps1B.Rmd file in YOUR repo, replace "YOUR NAME HERE" with your name
+\item Add in your responses, committing and pushing to YOUR repo in appropriate places along the way
+\item Run "Knit PDF" 
+\item Upload the pdf to Gradescope.  Don't forget to select which of your pages are associated with each problem.  \textit{You will not get credit for work on unassigned pages (e.g., if you only selected the first page but your solution spans two pages, you would lose points for any part on the second page that the grader can't see).} 
+\end{enumerate}
+
+```{r, setup, include=FALSE}
+# Load packages here 
+library(mdsr)   
+
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small",   # slightly smaller font for code
+  message=FALSE)   
+```
+
+\newpage 
+
+# If you discussed this assignment with any of your peers, please list who here:
+
+> ANSWER:
+
+
+
+\newpage
+# MDSR Exercise 2.5 (modified)
+
+Consider the data graphic for Career Paths at Williams College at: https://web.williams.edu/Mathematics/devadoss/careerpath.html.  Focus on the graphic under the "Major-Career" tab.
+
+a. What story does the data graphic tell?  What is the main message that you take away from it?
+
+> ANSWER:
+
+b. Can the data graphic be described in terms of the taxonomy presented in this chapter?  If so, list the visual cues, coordinate system, and scale(s).  If not, describe the feature of this data graphic that lies outside of that taxonomy.
+
+> ANSWER:
+
+c. Critique and/or praise the visualization choices made by the designer.  Do they work? Are they misleading?  Thought-provoking?  Brilliant?  Are there things that you would have done differently?  Justify your response.
+
+> ANSWER:
+
+
+\newpage
+# Spot the Error (non-textbook problem)
+
+Explain why the following command does not color the data points blue, then write down the command that will turn the points blue.
+
+> ANSWER:
+
+```{r}
+library(ggplot2)
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+```
+
+
+\newpage
+# MDSR Exercise 3.6 (modified)
+
+Use the `MLB_teams` data in the `mdsr` package to create an informative data graphic that illustrates the relationship between winning percentage and payroll in context. What story does your graph tell?
+
+> ANSWER:
+
+```{r}
+
+```
+
+
+\newpage
+# MDSR Exercise 3.10 (modified)
+
+Using data from the `nasaweather` package, use the `geom_path()` function to plot the path of each tropical storm in the `storms` data table (use variables `lat` (y-axis!) and `long` (x-axis!)).  Use color to distinguish the storms from one another, and use facetting to plot each `year` in its own panel.  Remove the legend of storm names/colors by adding `scale_color_discrete(guide="none")`. 
+
+Note: be sure you load the `nasaweather` package and use the `storms` dataset from that package!  
+
+```{r}
+
+```
+
+
+\newpage
+# Calendar assignment check-in
+
+For the calendar assignment:
+
+- Identify what questions you are planning to focus on
+- Describe two visualizations (type of plot, coordinates, visual cues, etc.) you imagine creating that help address your questions of interest 
+- Describe one table (what will the rows be?  what will the columns be?) you imagine creating that helps address your questions of interest
+
+Note that you are not wed to the ideas you record here.  The visualizations and table can change before your final submission.  But, I want to make sure your plan aligns with your questions and that you're on the right track.
+
+> ANSWER:
+
+ 
