@@ -92,8 +92,21 @@ The default symbol for `geom_point` is, well, a point.  But you can change the s
 - You can also specify different shapes for the different countries.  Since country is a variable in our dataset, we can use the `aes` function within `geom_point` to specify different shapes for different countries.  See if you can figure out the correct syntax to do this.  Can you also figure out how to make the legend nicer? (Hint: add something to the `labs` function.)
 
 ```{r, fig.width=10}
-
+ggplot(data = un_votes_hr
+       , mapping = aes(x = year, y = percent_yes, color = country)) +
+    geom_point(aes(shape=country)) +
+    geom_smooth(method = "loess", se = FALSE) +
+    labs(
+      title = "Percentage of 'Yes' votes  on human rights issues in the UN General Assembly",
+      subtitle = "1946 to 2015",
+      y = "% Yes",
+      x = "Year",
+      color = "Country"
+    )
 ```
+
+The shape argument is supposed to change the shape of the points.
+Legend nicer?
 
 *This is a good place to pause, commit changes with the commit message "Added answer for Ex 1", and push.*
 
@@ -107,7 +120,17 @@ Similarly, the default line type for `geom_smooth` is a solid line.  You can cha
 
 
 ```{r, fig.width=10}
-
+ggplot(data = un_votes_hr
+       , mapping = aes(x = year, y = percent_yes, color = country)) +
+    geom_point() +
+    geom_smooth(aes(linetype=country), size = 9) +
+    labs(
+      title = "Percentage of 'Yes' votes  on human rights issues in the UN General Assembly",
+      subtitle = "1946 to 2015",
+      y = "% Yes",
+      x = "Year",
+      color = "Country"
+    )
 ```
 
 *This is a good place to pause, commit changes with the commit message "Added answer for Ex 2", and push.*
