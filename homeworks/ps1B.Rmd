@@ -46,15 +46,15 @@ Consider the data graphic for Career Paths at Williams College at: https://web.w
 
 a. What story does the data graphic tell?  What is the main message that you take away from it?
 
-> ANSWER:
+> ANSWER: This data graphic is conveying what major(s) Williams College alums graduated with and what career choice they ended up choosing.
 
 b. Can the data graphic be described in terms of the taxonomy presented in this chapter?  If so, list the visual cues, coordinate system, and scale(s).  If not, describe the feature of this data graphic that lies outside of that taxonomy.
 
-> ANSWER:
+> ANSWER: Visual cues include: color (refers to majors), length/area (shows how many people are in the majors), direction (major to career choice and vice versa). Coordinate system: polar because coordinates are placed on a radius and angle. Scale: Categorical (the different majors and career choices). 
 
 c. Critique and/or praise the visualization choices made by the designer.  Do they work? Are they misleading?  Thought-provoking?  Brilliant?  Are there things that you would have done differently?  Justify your response.
 
-> ANSWER:
+> ANSWER: I thought that this graphic was very interesting and unique. From my understanding, it conveys clearly the relative amount of different majors at Williams College along with what Williams College alums choose as their career path. The only thing I would have considered doing differently would be having more drastic color differences between the majors because the compilation of everything looks a little confusing.
 
 
 \newpage
@@ -62,12 +62,16 @@ c. Critique and/or praise the visualization choices made by the designer.  Do th
 
 Explain why the following command does not color the data points blue, then write down the command that will turn the points blue.
 
-> ANSWER:
+> ANSWER: The following command does not color the data points blue because you need to specify the color outside aes(). The aesthetic values in aes() are data which are properly fit to a scale (which explains why it is interpreted with a legend). In the first command, since color is inside aes(), essentially a new factor variable and legend are generated.
+
 
 ```{r}
 library(ggplot2)
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+#ggplot(data = mpg) + 
+#  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+
+ggplot(data = mpg, aes(x = displ, y = hwy)) + 
+  geom_point(color = "blue")
 ```
 
 
@@ -76,10 +80,14 @@ ggplot(data = mpg) +
 
 Use the `MLB_teams` data in the `mdsr` package to create an informative data graphic that illustrates the relationship between winning percentage and payroll in context. What story does your graph tell?
 
-> ANSWER:
+> ANSWER: From this graph, it is evident that there is an association between winning percentage and payroll. As such, as winning percentage increases so does payroll.
 
 ```{r}
-
+#glimpse(MLB_teams)
+ggplot(MLB_teams, aes(x = WPct, payroll)) + 
+  geom_point() + 
+  labs(x = "Winning Percentage", y = "Payroll") + 
+  ggtitle("Payroll vs. Winning Percentage")
 ```
 
 
@@ -91,7 +99,14 @@ Using data from the `nasaweather` package, use the `geom_path()` function to plo
 Note: be sure you load the `nasaweather` package and use the `storms` dataset from that package!  
 
 ```{r}
-
+library(nasaweather)
+#glimpse(storms)
+ggplot(storms, aes(x = long, y = lat)) + 
+  geom_path(aes(color = name)) + 
+  facet_wrap(~year) + 
+  scale_color_discrete(guide="none") + 
+  labs(x = "Longitude", y = "Latitude") +
+  ggtitle("Tropical Storm Paths From 1995-2000")
 ```
 
 
