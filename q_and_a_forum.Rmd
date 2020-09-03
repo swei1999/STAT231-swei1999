@@ -1,0 +1,55 @@
+---
+title: 'STAT 231: R Q & A Discussion Forum'
+author: 'Sean, Tamer, Chris'
+date: "Sept. 3, 2020"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r, setup, include=FALSE}
+# Load packages here 
+library(mdsr)   
+library(babynames)
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small",
+  message=FALSE)   # slightly smaller font for code
+```
+
+### Q11: What are the differences between facet_grid() and facet_wrap()?  Can a quantitative variable be used within either of these facet functions?
+
+SOLUTION: Facet_wrap(~variable) will return a symmetrical matrix of plots for the number of levels of variable, while facet_grid(. ~variable) will return facets equal to the levels of variable distributed horizontally. An example of this can be seen below.
+
+If a quantitative variable is being faceted, it will be converted to a categorical variable, and the plot will contain a facet for each distinct value.
+
+http://www.cookbook-r.com/Graphs/Facets_(ggplot2)/
+
+https://stackoverflow.com/questions/20457905/whats-the-difference-between-facet-wrap-and-facet-grid-in-ggplot2
+
+
+```{r}
+library(nasaweather)
+
+#Using Facet Wrap
+ggplot(storms, aes(x = long, y = lat)) + 
+  geom_path(aes(color = name)) + 
+  facet_wrap(~year) + 
+  scale_color_discrete(guide="none") + 
+  labs(x = "Longitude", y = "Latitude") +
+  ggtitle("Tropical Storm Paths From 1995-2000 Using Facet Wrap")
+
+#Using Facet Grid
+ggplot(storms, aes(x = long, y = lat)) + 
+  geom_path(aes(color = name)) + 
+  facet_grid(~year) + 
+  scale_color_discrete(guide="none") + 
+  labs(x = "Longitude", y = "Latitude") +
+  ggtitle("Tropical Storm Paths From 1995-2000 Using Facet Grid")
+```
+
+
+ 
