@@ -35,7 +35,7 @@ knitr::opts_chunk$set(
 
 # If you discussed this assignment with any of your peers, please list who here:
 
-> ANSWER:
+> ANSWER: Zach Ostrow
 
 
 
@@ -46,15 +46,15 @@ Consider the data graphic for Career Paths at Williams College at: https://web.w
 
 a. What story does the data graphic tell?  What is the main message that you take away from it?
 
-> ANSWER: This data graphic is conveying what major(s) Williams College alums graduated with and what career choice they ended up choosing.
+> ANSWER: This data graphic is conveying what major(s) Williams College alums graduated with and then career choice they ended up choosing. You can also look at it from the other perspective - what majors did certain career choices have? The main message that I took away from this was that career choices have many different backgrounds and that your major doesn't always 100% dictate your career path.
 
 b. Can the data graphic be described in terms of the taxonomy presented in this chapter?  If so, list the visual cues, coordinate system, and scale(s).  If not, describe the feature of this data graphic that lies outside of that taxonomy.
 
-> ANSWER: Visual cues include: color (refers to majors), length/area (shows how many people are in the majors), direction (major to career choice and vice versa). Coordinate system: polar because coordinates are placed on a radius and angle. Scale: Categorical (the different majors and career choices). 
+> ANSWER: Yes, the data graphic can be described in terms of the taxonomy presented in this chapter. Visual cues include: color (refers to majors) and arc length (shows how many people are in the majors). Coordinate system: seems polar because coordinates are placed on a radius and angle. Scale: Categorical (the different majors and career choices). 
 
 c. Critique and/or praise the visualization choices made by the designer.  Do they work? Are they misleading?  Thought-provoking?  Brilliant?  Are there things that you would have done differently?  Justify your response.
 
-> ANSWER: I thought that this graphic was very interesting and unique. From my understanding, it conveys clearly the relative amount of different majors at Williams College along with what Williams College alums choose as their career path. The only thing I would have considered doing differently would be having more drastic color differences between the majors because the compilation of everything looks a little confusing.
+> ANSWER: I thought that this graphic was very interesting and unique. From my understanding, it conveys clearly the relative amount of different majors at Williams College along with what Williams College alums choose as their career path. One thing I would have considered doing differently would be having more drastic color differences between the majors because the compilation of everything looks a little confusing. I also would have appreciated some quantitative values to go along with the visual.
 
 
 \newpage
@@ -80,7 +80,7 @@ ggplot(data = mpg, aes(x = displ, y = hwy)) +
 
 Use the `MLB_teams` data in the `mdsr` package to create an informative data graphic that illustrates the relationship between winning percentage and payroll in context. What story does your graph tell?
 
-> ANSWER: From this graph, it is evident that there is an association between winning percentage and payroll. As such, as winning percentage increases so does payroll.
+> ANSWER: From this graph, it is evident that there is a medium to strong positive linear association between winning percentage and payroll. As such, as winning percentage increases we expect payroll to as well.
 
 ```{r}
 #glimpse(MLB_teams)
@@ -121,6 +121,6 @@ For the calendar assignment:
 
 Note that you are not wed to the ideas you record here.  The visualizations and table can change before your final submission.  But, I want to make sure your plan aligns with your questions and that you're on the right track.
 
-> ANSWER:
+> ANSWER: I think the questions that I am planning to focus on are exercise time, how much time studying (productivity), and how much sleep I'm getting versus how much I should be getting. One plot could be a time plot where there's a horizontal line signifying 8 hours and I'll overlay that with the amount of sleep I actually got over time. Another visualization could just be how am I spending all of my time, with different colors representing the amount of time I spend on exercise, sleep, work, and leisure each day. For a table, the columns could be the different things I'm tracking (i.e work, sleep, etc.) as well as possibly one where it is a calculation of how far off/how many more hours I was from the expected amount of hours. In that case, each row would be it's own day.
 
  
