@@ -1,0 +1,138 @@
+---
+title: "STAT 231: Problem Set 2A"
+author: "Sean Wei"
+date: "due by 5 PM on Monday, September 7"
+output: pdf_document
+---
+
+In order to most effectively digest the textbook chapter readings -- and the  new R commands each presents -- series A homework assignments are designed to encourage you to read the textbook chapters actively and in line with the textbook's Prop Tip of page 33:
+
+"\textbf{Pro Tip}: If you want to learn how to use a particular command, we highly recommend running the example code on your own" 
+
+A more thorough reading and light practice of the textbook chapter prior to class allows us to dive quicker and deeper into the topics and commands during class.  Furthermore, learning a programming lanugage is like learning any other language -- practice, practice, practice is the key to fluency.  By having two assignments each week, I hope to encourage practice throughout the week.  A little coding each day will take you a long way!
+
+*Series A assignments are intended to be completed individually.*  While most of our work in this class will be collaborative, it is important each individual completes the active readings.  The problems should be straightforward based on the textbook readings, but if you have any questions, feel free to ask me!
+
+Steps to proceed:
+
+\begin{enumerate}
+\item In RStudio, go to File > Open Project, navigate to the folder with the course-content repo, select the course-content project (course-content.Rproj), and click "Open" 
+\item Pull the course-content repo (e.g. using the blue-ish down arrow in the Git tab in upper right window)
+\item Copy ps2A.Rmd from the course repo to your repo (see page 6 of the GitHub Classroom Guide for Stat231 if needed)
+\item Close the course-content repo project in RStudio
+\item Open YOUR repo project in RStudio
+\item In the ps2A.Rmd file in YOUR repo, replace "YOUR NAME HERE" with your name
+\item Add in your responses, committing and pushing to YOUR repo in appropriate places along the way
+\item Run "Knit PDF" 
+\item Upload the pdf to Gradescope.  Don't forget to select which of your pages are associated with each problem.  \textit{You will not get credit for work on unassigned pages (e.g., if you only selected the first page but your solution spans two pages, you would lose points for any part on the second page that the grader can't see).} 
+\end{enumerate}
+
+```{r, setup, include=FALSE}
+library(mdsr)  
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+```
+
+\newpage
+# 1. NYC Flights
+
+### a.
+In Section 4.3.1, the `flights` and `carrier` tables within the `nycflights13` package are joined together.  Recreate the `flightsJoined` dataset from page 80.  Hint: make sure you've loaded the `nycflights13` package before referring to the data tables (see code on page 79).
+
+```{r}
+library(nycflights13)
+data(flights)
+data(airlines)
+flightsJoined <- flights %>%
+  inner_join(airlines, by = c("carrier" = "carrier"))
+glimpse(flightsJoined)
+```
+
+
+### b.
+Now, create a new dataset `flightsJoined2` that:
+
+* creates a new variable, `distance_km`, which is distance in kilometers (note that 1 mile is about 1.6 kilometers)
+* keeps only the variables: `name`, `flight`, `arr_delay`, and `distance_km`  
+* keeps only observations where distance is less than 500 kilometers 
+
+Hint: see examples in Section 4.1 for subsetting datasets and creating new variables.  
+
+```{r}
+flightsJoined2 <- mutate(flightsJoined, distance_km = distance * 1.6)
+flightsJoined2 <- select(flightsJoined2, name, flight, arr_delay, distance_km)
+flightsJoined2 <- filter(flightsJoined2, distance_km < 500)
+head(flightsJoined2)
+```
+
+
+### c.
+Lastly, using the functions introduced in Section 4.1.4, compute the number of flights (call this `N`), the average arrival delay (call this `avg_arr_delay`), and the average distance in kilometers (call this `avg_dist_km`) among these flights with distances less than 500 km (i.e. working off of `flightsJoined2`) *grouping by the carrier name*.  Sort the results in descending order based on `avg_arr_delay`.
+
+Getting NAs for `avg_arr_delay`?  That happens when some observations are missing that data.  Before grouping and summarizing, add a line to exclude observations with missing arrival delay information using `filter(is.na(arr_delay)==FALSE)`.
+
+```{r}
+flightsJoined2 %>%
+  filter(is.na(arr_delay)==FALSE) %>% 
+  group_by(name) %>%
+  summarize(
+    N = n(),
+    avg_arr_delay = mean(arr_delay),
+    avg_dist_km = mean(distance_km),
+  ) %>%
+  arrange(desc(avg_arr_delay))
+```
+
+
+\newpage 
+# 2. Baby names
+
+### a. 
+Working with the `babynames` data table in the `babynames` package, create a dataset `babynames2` that only includes years 2000 to 2017.
+
+```{r}
+library(babynames)
+data(babynames)
+#View(babynames)
+babynames2 <- filter(babynames, year >= 2000 & year <= 2017)
+```
+
+### b. 
+Following the code presented in Section 5.2.4, create a dataset called `BabyNarrow` that summarizes the total number of people with each name (born between 2000 and 2017), grouped by sex. (Hint: follow the second code chunk on page 102, but don't filter on any particular names.) Look at the dataset.  Why have we called this dataset "narrow"?
+
+> ANSWER: This dataset is called narrow because the number of female and male names are combined into one total count rather than there being separate totals for female and male names.
+
+```{r}
+BabyNarrow <- babynames2 %>% 
+  group_by(name, sex) %>% 
+  summarise(total= sum(n))
+BabyNarrow
+```
+
+### c.
+Now, following the code chunk presented on page 103, put the data into a wide format (call the new dataset `BabyWide`), and only keep observations where both `M` and `F` are greater than 10,000.  Compute the `ratio` (as `pmin(M/F, F/M`)) and identify the top three names with the largest ratio.  (Note: these names could be different from the ones found on page 103 since we limited the dataset to years 2000-2017 and names with greater than 10,000 individuals.)
+
+> ANSWER: The top three names with the largest ratio are Justice, Skyler, and Quinn.
+
+```{r}
+BabyWide <- BabyNarrow %>%
+  spread(key= sex,value=total,fill= 0) %>%
+  filter(M > 10000, F > 10000) %>% 
+  mutate(ratio= pmin(M/F, F/M)) %>% 
+  arrange(desc(ratio))
+head(BabyWide, 3)
+```
+
+### d.
+Lastly, use the `gather()` function (or the `pivot_longer()` function) to put the dataset back into narrow form.  Call this dataset `BabyNarrow2`.  Hint: see Section 5.2.3.  Why are the number of observations in `BabyNarrow2` different from that in `BabyNarrow`?
+
+> ANSWER: The number of observations in BabyNarrow2 are different from those in BabyNarrow because BabyNarrow2 was converted from BabyWide, which only contained observations where both M and F were greater than 10,000.
+
+```{r}
+BabyNarrow2 <- pivot_longer(BabyWide, !c(name, ratio), names_to= "sex", values_to="count")
+head(BabyNarrow2)
+```
+
