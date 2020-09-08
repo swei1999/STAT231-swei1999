@@ -1,0 +1,254 @@
+---
+title: "Lab 03 - Health care spending and coverage in the US"
+subtitle: "Data Wrangling + Tidy Data"
+date: "`r Sys.Date()`"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+These exercises are designed to give you practice wrangling and tidying data, both from a *processes* perspective (what needs to be done to the data before I can run my fancy analysis and/or make my cool visualization?) and an *R implementation* perspective (how do I implement those steps specifically in R?).
+
+```{r include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+# change displayed number of digits in R Markdown document
+options(digits = 2)
+```
+
+# Packages
+
+In this lab we will work with the `tidyverse`, `datasets`, and `janitor` packages. The `datasets` package contains a dataset `state` with information on each state such as region.
+
+We start by loading the packages.
+
+```{r, message = FALSE}
+library(tidyverse)
+library(datasets)
+library(janitor)
+```
+
+
+# Exploring Health Expenditure using State-level data
+
+This case study is based on an open case study from the OCS project (Kuo et al. 2019).
+
+Health policy in the United States is complicated, and several forms of healthcare coverage exist, including both federal goverment-led healthcare policy, and private insurance company. Before making any inference about the relationship between health condition and health policy, it is important for us to have a general idea about healthcare economics in the United States. Thus, we are interested in getting a sense of the health expenditure, including healthcare coverage and healthcare spending, across the United States.
+
+Motivating questions:
+
+- Is there a relationship between healthcare coverage and healthcare spending in the United States?
+- How does the spending distribution change across geographic regions in the United States?
+- Does the relationship between healthcare coverage and healthcare spending in the United States change from 2013 to 2014?
+
+
+# The Data
+
+Data for this lab come from Henry J Kaiser Family Foundation (KFF).
+
+- Health Insurance Coverage of the Total Population[https://www.kff.org/other/state-indicator/total-population/]
+     + Includes years 2013-2016
+     
+- Health Care Expenditures by State of Residence (in millions)[https://www.kff.org/other/state-indicator/health-care-expenditures-by-state-of-residence-in-millions/?currentTimeframe=0&sortModel=%7B%22colId%22:%22Location%22,%22sort%22:%22asc%22%7D]
+     + Includes years 1991-2014
+     
+First, let's read in the files containing the healthcare coverage and healthcare spending data.
+
+```{r}
+coverage <- read_csv("http://kcorreia.people.amherst.edu/F1920/healthcare_coverage.txt")
+spending <- read_csv("http://kcorreia.people.amherst.edu/F1920/healthcare_spending.txt")
+```
+
+Since our goal is to get sense of the health expenditure, including healthcare coverage and healthcare spending, across states, it would be nice add some information about each state. Namely, the state abbreviation and state region (i.e. north, south, etc).
+
+For this we use the `state` dataset in the `datasets` R package.  Since we already loaded that package, we can refer directly to the `state` dataset even though we don't see it in our Environment pane in the upper right corner.  However, I like to be able to see any objects I'm working with in my Environment, so run the following code:
+
+```{r}
+# state objects should appear in your Environment pane
+data(state) 
+
+# creates a data frame with state info
+state_info <- data.frame(Location = state.name, Abbrev = state.abb, Region = state.region)
+```
+
+
+# Warm-up 
+
+Get acquianted with the `spending` and `coverage` datasets.  What years are covered in the `spending` dataset?  What years are covered in the `coverage` dataset?  (Yes, the answers to these questions are above, but how can you confirm this in the datasets?)  
+
+If we're interested in the relationship between spending and coverage, we'll only be able to use observations that have information on both.  That is, we won't be using data from years for which we only have spending information or only have coverage information.  Remove any variables we won't be using from `spending` and `coverage`.  (Hint: the `starts_with` function could help with efficiency here: https://tidyselect.r-lib.org/reference/starts_with.html)
+
+> RESPONSE: 
+
+```{r}
+spending2 <- select(spending, Location, starts_with(c("2013", "2014")))
+coverage2 <- select(coverage, Location, starts_with(c("2013", "2014")))
+```
+
+Note that there are observations both for the US as a whole and DC.  Remove these observations from both datasets.
+
+```{r}
+spending2 <- filter(spending2, Location != "United States" & 
+                      Location != "District of Columbia")
+coverage2 <- filter(coverage2, Location != "United States" & 
+                      Location != "District of Columbia")
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Warm-up", and push.*
+
+# Health care spending and coverage
+
+## Q1. Is there a relationship between healthcare coverage and healthcare spending in the United States?
+
+Let's start by creating a scatterplot with log(spending) on the x-axis and log(employer coverage) on the y-axis, with the points colored by year.  (Note that we'll use logs because both these variables are right-skewed and have large outliers; feel free to check out their histograms and/or look at the un-logged scatterplot if you'd like, as well.)  This is a simple enough scatterplot, but we'll need to do a bit of data tidying before the data are in an appropriate format to create the plot.
+
+First, sketch the scatterplot (don't worry about the actual x-y relationship, but be sure to identify the different variables that will be needed to create the plot).  What variables do you need in the dataset in order to create the scatterplot in ggplot?  What will each observation (row) in the dataset represent?
+
+> RESPONSE: We need log(employer coverage) and log(spending), and each row is a year.
+
+
+What are some of the steps that will need to be taken to get the data in that form?  
+
+> RESPONSE: Transform the data, and then join these two tables.
+
+*When you're done with the above responses, leave your break-out room and come back to the main room!*
+
+Now implement those steps in R, tidying the dataset for plotting.  After the final step, use the `clean_names()` function from the `janitor` package to clean the variable names.  Then, create the scatterplot.
+
+```{r}
+#transform spending & employer coverage
+spending2 <- mutate(spending2, `2013_Log_Spending`= log(`2013__Total Health Spending`),
+                               `2014_Log_Spending`= log(`2014__Total Health Spending`))
+coverage2 <- mutate(coverage2, `2013_Log_Employer`= log(`2013__Employer`),
+                               `2014_Log_Employer`= log(`2014__Employer`))
+
+#join the datasets and keep only necessary features
+data <- inner_join(spending2, coverage2, by = "Location")
+data <- select(data, Location, `2013_Log_Spending`, `2014_Log_Spending`,
+                               `2013_Log_Employer`, `2014_Log_Employer`)
+
+#convert dataset to longer to get year & type
+data_longer <- pivot_longer(data, cols = c(`2013_Log_Spending`, `2014_Log_Spending`, `2013_Log_Employer`, `2014_Log_Employer`), names_to = "year", values_to = "val")
+data_longer <- mutate(data_longer, type = year)
+data_longer$year <- substr(x = data_longer$year, start = 1, stop = 4)
+data_longer$type <- substr(x = data_longer$type, start = 6, stop = 17)
+
+#convert dataset back to wider
+data_wider <- pivot_wider(data_longer, names_from = type, values_from = val)
+data_wider <- clean_names(data_wider)
+
+#create scatterplot
+ggplot(data_wider, aes(x = log_spending, y = log_employer)) + 
+  geom_point(aes(color = year)) + 
+  labs(x = "Log Spending", y = "Log Employer") + 
+  ggtitle("Log (Employer Coverage) vs Log (Spending)")
+
+```
+
+
+We see there is a strong relationship between log(spending) and log(coverage) within each year. However, you might suspect that healthcare coverage and spending is also strongly related to population size.  In the `coverage` dataset, the total type is not really a formal type of healthcare coverage. It really represents just the total number of people in the state. This is useful information.  Next:
+
+- rename that column to be `total_pop` to be clear.
+- create a scatterplot of `total_pop` (population size) versus employer coverage
+- create a scatterplot of `total_pop` (population size) versus spending
+
+What do you notice?
+
+> RESPONSE:
+
+```{r}
+
+
+```
+
+
+Lastly, to account for total population, create a scatterplot of spending per capita versus proportion with employer coverage.  This time, *color by region* and *facet by year*.  The total spending column is reported in millions (1e6). Therefore, to calculate `spending_capita` we will need to adjust for this scaling factor to report it on the original scale (just dollars) and then divide by `tot_pop`.  Based on this figure, write a brief paragraph describing the relationship between health care spending and coverage in the US.
+
+> RESPONSE:
+
+```{r}
+
+
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Q1", and push.*
+
+## Which US states spend the most and which spend the least on health care? How does the spending distribution change across geographic regions in the United States?
+
+Which US states spent the most per capita on health care in 2013 and 2014?  
+
+> RESPONSE:  
+
+```{r}
+
+
+```
+
+Which US states spent the least per capita on health care in 2013 and 2014?
+
+> RESPONSE: 
+
+```{r}
+
+
+```
+
+How does the spending distribution change across geographic region in the US?  Create an appropriate figure to visualize the distribution of spending per capita on health care by region.  Write one paragraph summarizing a comparison of the distributions.  (Note that you probably will also want to generate summary statistics by region in order to include specific values in your summary paragraph.)
+
+> RESPONSE: 
+
+```{r}
+
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Q2", and push.*
+
+## Does the relationship between healthcare spending and the proportion of uninsured in the United States change from 2013 to 2014?
+
+Re-create this plot for 2013: ![Uninsured vs. Spending in 2013](images/uninsured_spending_2013.png)
+
+
+(Hint: use `nudge_x = 150` in the `geom_text` layer.)
+
+```{r}
+
+```
+
+Next, create an analogous plot (separately) for 2014.    Does the relationship between healthcare spending and the proportion of uninsured change from 2013 to 2014?
+
+> RESPONSE: 
+
+Create the same plots, but instead of creating completely separate figures for 2013 and 2014, create one figure that is facetted by year (still colored by region).  
+
+Lastly, plot the points for both years on the same plot, this time colored by year instead of region.  Make sure to specify the `group` aesthetic for year as well to get two lines.
+
+Which of these three visualizations do you find most helpful for comparing the relationship between 2013 and 2014?  Why?
+
+> RESPONSE: 
+
+```{r}
+
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for Q3", and push.*
+
+## Extra
+
+Done early?  Try to figure out how to make these additional updates to the first figure from the last exercise to hone your plotting skills:
+
+- remove the "a" on the points in the legend 
+- change the background to be all white
+- make the numbers on the x-axis larger
+- change the font of the text on the y-axis
+
+```{r}
+
+```
+
+
+# References
+
+Kuo, Pei-Lun and Jager, Leah and Taub, Margaret and Hicks, Stephanie. (2019, February 14). opencasestudies/ocs-healthexpenditure: Exploring Health Expenditure using State-level data in the United States (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo.2565307
