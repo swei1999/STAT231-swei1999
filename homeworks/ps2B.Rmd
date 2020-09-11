@@ -83,23 +83,23 @@ ryan_stats %>%
 
 a. The Violations data set in the `mdsr` package contains information regarding the outcome of health inspections in New York City.  Use these data to calculate the median violation score by zipcode and dba for zipcodes in Manhattan.  What pattern (if any) do you see between the number of inspections and the median score?  Generate a visualization to support your response.  
 
-> ANSWER: Looking at the new table, there does not seem to be any pattern between the number of inspections and the median score. This is also evident through the scatterplot below.
+> ANSWER: Looking at the scatterplot below, there does not seem to be any clear pattern between the number of inspections and the median score. Although, it could be argued that there might be some positive association between the number of inspections and median score.
 
 ```{r}
 data(Violations)
 
 #creating appropriate data table
 median_scores <- Violations %>%
-  filter(is.na(score)==FALSE & boro == "MANHATTAN") %>%
+  filter(is.na(score) == FALSE & boro == "MANHATTAN") %>%
   group_by(zipcode, dba) %>%
-  summarise(median_score = median(score), interrogations = n())
+  summarise(median_score = median(score), inspections = n())
 median_scores
 
 #create scatterplot
-ggplot(median_scores, aes(x = interrogations, y = median_score)) + 
+ggplot(median_scores, aes(x = inspections, y = median_score)) + 
   geom_point() + 
-  labs(x = "# of Interrogations", y = "Median Score") +
-  ggtitle("Median Score vs. Interrogations in Manhattan")
+  labs(x = "# of Inspections", y = "Median Score") +
+  ggtitle("Median Score vs. Inspections in Manhattan")
 ```
 
 b.  In your visualization in part (a), there should be at least a few points that stand out as outliers.  For *one of the outliers*, add text to the outlier identifying what business it is and an arrow pointing from the text to the observation.  First, you may want to `filter` to identify the name of the business (so you know what text to add to the plot).  
@@ -107,20 +107,20 @@ b.  In your visualization in part (a), there should be at least a few points tha
 (Can't remember how to create a curved arrow in `ggplot`?  Can't remember how to add text to the plot in `ggplot`?  Check out the answers to questions #5 and #8, respectively, in the Moodle R Q&A forum!)
 
 ```{r}
-#want to get the point where num interrogations > 200
+#want to get the point of the highest median score
 outlier <- median_scores %>%
   arrange(desc(median_score)) %>%
   head(1) 
 outlier
 
 #create scatterplot w/ arrow and name
-ggplot(median_scores, aes(x = interrogations, y = median_score)) + 
+ggplot(median_scores, aes(x = inspections, y = median_score)) + 
   geom_point() + 
   geom_text(aes(label=ifelse(median_score==112, as.character(outlier$dba),'')), 
             hjust = 1, vjust=1) +
   geom_curve(aes(x = 27, y = 112, xend = 15, yend = 114), arrow = arrow()) +
-  labs(x = "# of Interrogations", y = "Median Score") +
-  ggtitle("Median Score vs. Interrogations")
+  labs(x = "# of Inspections", y = "Median Score") +
+  ggtitle("Median Score vs. Inspections")
 ```
 
 
