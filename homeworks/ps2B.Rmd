@@ -83,7 +83,7 @@ ryan_stats %>%
 
 a. The Violations data set in the `mdsr` package contains information regarding the outcome of health inspections in New York City.  Use these data to calculate the median violation score by zipcode and dba for zipcodes in Manhattan.  What pattern (if any) do you see between the number of inspections and the median score?  Generate a visualization to support your response.  
 
-> ANSWER: Looking at the scatterplot below, there does not seem to be any clear pattern between the number of inspections and the median score. Although, it could be argued that there might be some positive association between the number of inspections and median score.
+> ANSWER: Looking at the scatterplot below, there does not seem to be any clear pattern between the number of inspections and the median score. Although, it could be argued that there might be some small positive association between the number of inspections and median score.
 
 ```{r}
 data(Violations)
@@ -117,8 +117,8 @@ outlier
 ggplot(median_scores, aes(x = inspections, y = median_score)) + 
   geom_point() + 
   geom_text(aes(label=ifelse(median_score==112, as.character(outlier$dba),'')), 
-            hjust = 1, vjust=1) +
-  geom_curve(aes(x = 27, y = 112, xend = 15, yend = 114), arrow = arrow()) +
+            hjust = 1, vjust=1, nudge_x = 31, angle = 45) +
+  geom_curve(aes(x = 50, y = 107, xend = 27, yend = 112), arrow = arrow()) +
   labs(x = "# of Inspections", y = "Median Score") +
   ggtitle("Median Score vs. Inspections")
 ```
