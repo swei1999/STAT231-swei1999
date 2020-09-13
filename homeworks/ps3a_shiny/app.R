@@ -28,11 +28,16 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-  output$hist <- renderPlot({
-    hist(rnorm(input$num), main=input$title, xlab = "Normal Values")
+  data <- reactive({
+    rnorm(input$num)
   })
+  
+  output$hist <- renderPlot({
+    hist(data(), main=input$title, xlab = "Normal Values")
+  })
+  
   output$stats <- renderPrint({
-    summary(rnorm(input$num))
+    summary(data())
   })
 }
 
