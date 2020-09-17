@@ -121,15 +121,18 @@ ui <- fluidPage(
       add_busy_spinner(spin = "double-bounce"),
       tabsetPanel(type = "tabs", 
           tabPanel("Scatterplot", 
-            HTML("<p>The scatterplot below is interactive - try hovering over the points to see the candy brand!</p>"), 
+            HTML("<p>The scatterplot below is interactive - try hovering over the 
+                 points to see the candy brand!</p>"), 
             plotOutput(outputId = "scatter", hover = hoverOpts(id = "plot_hover", delay = 0))),
           
           tabPanel("Rankings", 
-            HTML("<p>This table explains how often a candy of a given type won its matchups against other brands."), 
+            HTML("<p>This table explains how often a candy of a given type won its 
+                 matchups against other brands."), 
             tableOutput(outputId = "table")),
           
           tabPanel("Candy Characteristics", 
-            HTML("<p>Curious to see the different possible characteristics of your favorite candy? Use this table to explore and search for your favorites.</p>"),
+            HTML("<p>Curious to see the different possible characteristics of your 
+                 favorite candy? Use this table to explore and search for your favorites.</p>"),
             fluidRow(
               selectInput(
                 inputId = "characteristic",
