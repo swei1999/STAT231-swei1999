@@ -1,0 +1,100 @@
+---
+title: "STAT 231: Problem Set 4A"
+author: "Sean Wei"
+date: "due by 5 PM on Monday, September 21"
+output: pdf_document
+---
+
+In order to most effectively digest the textbook chapter readings -- and the  new R commands each presents -- series A homework assignments are designed to encourage you to read the textbook chapters actively and in line with the textbook's Prop Tip of page 33:
+
+"\textbf{Pro Tip}: If you want to learn how to use a particular command, we highly recommend running the example code on your own" 
+
+A more thorough reading and light practice of the textbook chapter prior to class allows us to dive quicker and deeper into the topics and commands during class.  Furthermore, learning a programming lanugage is like learning any other language -- practice, practice, practice is the key to fluency.  By having two assignments each week, I hope to encourage practice throughout the week.  A little coding each day will take you a long way!
+
+*Series A assignments are intended to be completed individually.*  While most of our work in this class will be collaborative, it is important each individual completes the active readings.  The problems should be straightforward based on the textbook readings, but if you have any questions, feel free to ask me!
+
+Steps to proceed:
+
+\begin{enumerate}
+\item In RStudio, go to File > Open Project, navigate to the folder with the course-content repo, select the course-content project (course-content.Rproj), and click "Open" 
+\item Pull the course-content repo (e.g. using the blue-ish down arrow in the Git tab in upper right window)
+\item Copy ps4A.Rmd from the course repo to your repo (see page 6 of the GitHub Classroom Guide for Stat231 if needed)
+\item Close the course-content repo project in RStudio
+\item Open YOUR repo project in RStudio
+\item In the ps4A.Rmd file in YOUR repo, replace "YOUR NAME HERE" with your name
+\item Add in your responses, committing and pushing to YOUR repo in appropriate places along the way
+\item Run "Knit PDF" 
+\item Upload the pdf to Gradescope.  Don't forget to select which of your pages are associated with each problem.  \textit{You will not get credit for work on unassigned pages (e.g., if you only selected the first page but your solution spans two pages, you would lose points for any part on the second page that the grader can't see).} 
+\end{enumerate}
+
+```{r, setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+```
+
+\newpage
+# 1. Web scraping
+
+### a.
+In Section 5.5.1, the `rvest` package is used to scrape a Wikipedia page.  BUT **WAIT**!  While we techinically might be able to scrape a webpage, that doesn't necessarily mean we are allowed to.  **ETHICS ALERT!** Before scraping a web page, you should always check whether doing so is allowed.  If you're unsure of the permissions for a particular domain, you can use the handy `paths_allowed` function within the `robotstext` package.
+
+Check the permissions for the Wikipedia page using the code below. Uncomment the code. You should get a response "TRUE", indicating that a bot has permissions to access this page.
+
+```{r}
+# you may need to install the robotstext package if you're on your machine and haven't used it before
+library(robotstxt)
+paths_allowed("https://en.wikipedia.org/wiki/Mile_run_world_record_progression")
+```
+
+
+### b.
+Now, follow the code in the textbook to scrape the tables from the Wikipedia page on "Mile run world record progression" (e.g., pages 118-120).  Use `length(tables)` to identify how many tables are in the object you created called `tables`.  How many tables are there? (Note: the Wikipedia page has been updated since the first edition of the textbook was printed, so the number should be different than that in the textbook!)
+
+> ANSWER: There are 12 tables.
+
+```{r}
+library(rvest)
+library(methods)
+url <- "http://en.wikipedia.org/wiki/Mile_run_world_record_progression"
+tables <- url %>%
+  read_html() %>%
+  html_nodes("table")
+length(tables)
+```
+
+
+### c.
+Next, look at the Wikipedia page: https://en.wikipedia.org/wiki/Mile_run_world_record_progression.  The table toward the bottom titled "Women Indoor IAAF era" shows four records -- one for Mary Decker, two for Doina Melinte, and one for Genzebe Dibaba.  
+
+Suppose we want to work in R with this "Women Indoor IAAF era" table.  From your `tables` object created in part b, create a dataframe called `women_indoor` that includes this "Women Indoor IAAF era" table.  You can use the same code as used in the textbook to create `Table3` and `Table4`, except you'll need to update the number within the double brackets to correspond to the correct table.  You'll likely need to look at a number of different tables in the `tables` object before finding which one corresponds to the "Women Indoor IAAF" table.  Print the table.  Who holds the indoor one-mile world record for IAAF women, and what was her time?
+
+> ANSWER: Genzebe Dibaba holds the indoor one-mile world record for IAAF women, and her time was 4:13.31.
+
+```{r}
+women_indoor <- html_table(tables[[10]])
+women_indoor
+```
+
+#### d.
+Lastly: 
+
+- create a dataframe called `women_outdoor` that contains the table for "Women's IAAF era" (starting with Anne Smith's record and ending with Sifan Hassan's record)
+- combine `women_indoor` and `women_outdoor` into one dataframe called `women` using the `bind_rows()` function.  Include a variable called `Type` in this new dataframe to indicate whether a particular observation corresponds to an indoor record or an outdoor record.  (Hint: create `Type` separately in each dataframe before combining)
+- arrange `women` by ascending time, and identify the fastest world record
+
+Is the fastest record from an indoor or outdoor event?
+
+> ANSWER: Sifan Hassan has the fastest record from an indoor or outdoor event, with a time of 4:12.33.
+
+```{r}
+women_outdoor <- html_table(tables[[8]])
+women_indoor <- mutate(women_indoor, Type = "Indoor")
+women_outdoor <- mutate(women_outdoor, Type = "Outdoor")
+women <- bind_rows(women_indoor, women_outdoor)
+head(arrange(women, Time), 1)
+```
+
