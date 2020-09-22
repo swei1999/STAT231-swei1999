@@ -1,0 +1,170 @@
+---
+title: "Lab 05 - September's Baccalaureate"
+subtitle: "Web scraping"
+date: "September 22, 2020"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes 
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+# change displayed number of digits in R Markdown document
+options(digits = 2)
+```
+
+Next week we'll be working with Emily Dickinson's poetry to introduce text analysis.  In order to bring her poetry into R, we can webscrape the poems from Wikipedia.  (Perhaps not the most accurate source for her poetry, but a good exercise in web scraping, for loops, and algorthmic thinking!)
+
+There is a separate Wikipedia page for each of Dickinson's poems -- she wrote over 1,500!  How can we efficiently search across all these pages to get the text from each poem into R?  We'll first web scrape a Wikipedia page that contains a *table* which lists all her poems.  Then we'll use data from that *table* to loop through each of the different pages containing the text to the poems, and scrape the *text* of the poems.
+
+# Packages
+
+In this lab we will work with the `tidyverse`, `rvest`, and `robotstxt` packages. 
+
+```{r message=FALSE}
+library(tidyverse) 
+library(rvest)
+library(robotstxt)
+```
+
+# Getting started
+
+In the class example, we confirmed that a bot has permissions to access pages on this domain.
+
+```{r, warning=FALSE}
+paths_allowed("https://www.wikipedia.org/")
+```
+
+We then webscraped one of Emily Dickinson's poems, September's Baccalaureate.
+
+```{r}
+# identify webpage URL you want to scrape
+sept_bac_url <- "https://en.wikisource.org/wiki/September%27s_Baccalaureate"
+
+# scrape text from the page
+# note that the html nodes argument is "div p" instead of "table"
+# and the addition of html_text
+sept_bac_text <- (sept_bac_url %>%               
+  read_html() %>%
+  html_nodes("div p") %>%   
+  html_text)[1]
+
+sept_bac_text
+cat(sept_bac_text)
+```
+
+There is a separate Wikipedia page for each of Dickinson's poems -- she wrote over 1,500!  How can we efficiently search across all these pages to get the text from each poem into R?
+
+Check out [this Wikipedia page](https://en.wikipedia.org/wiki/List_of_Emily_Dickinson_poems), which contains a table listing her poems.
+
+Click on the first five or so poems in the table (which should take you to a webpage that contains the text of the poem).  What do you notice about the URL for the page that contains the text to the poems?  Can you identify a pattern in the URLs?
+
+> ANSWER: All end in the title
+
+
+# Web scrape a table
+
+Next, web scrape the table from the Wikipedia page [List of Emily Dickinson poems](https://en.wikipedia.org/wiki/List_of_Emily_Dickinson_poems) using the `read_html()`, `html_nodes("table")`, and `html_table()` functions (e.g., as done in PS4A).
+
+```{r}
+url <- "https://en.wikipedia.org/wiki/List_of_Emily_Dickinson_poems"
+poems <- url %>% 
+  read_html() %>% 
+  html_nodes("table")
+poems_list <- html_table(poems[[1]])
+```
+
+Can you think of a way to create a new variable which contains the URL to the page that holds the poem's text?  Think about the pattern you identified above.  Note that it may not capture all poem pages exactly, but try to create a variable that captures the general pattern(s) you identified.  (Hint: the `str_replace_all` and `paste`/`paste0` functions may be useful here.)
+
+```{r}
+title <- poems_list[1]
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for scraping a table", and push.*
+
+
+# Web scrape text for one poem
+
+Web scrape the text for the first poem in the table, [A Bee his burnished carriage](https://en.wikisource.org/wiki/A_Bee_his_burnished_Carriage) following the same code as used to scrape the text for September's Baccalaureate.
+
+```{r}
+poem_url <- paste0("https://en.wikisource.org/wiki/A_Bee_his_burnished_Carriage")
+poem_url
+
+first_poem <- (poem_url %>%               
+  read_html() %>%
+  html_nodes("div p") %>%   
+  html_text)[1]
+
+first_poem
+cat(first_poem)
+```
+
+*This is a good place to pause, commit changes with the commit message "Added answer for scraping text", and push.*
+
+# Web scrape text for many poems
+
+The last step is looping through each of those URLs to scrape the text of each poem, and saving the text along the way.  See if you can use a version of the code used to create `sept_bac_text` or `bee_burnished_text` in a for loop to collect the text across all the different pages. I've gotten it started for you below.  (Hint: you should use the variable that contains the suspected URLs that you created after scraping the table.  You can refer to a specific element/url in the form `datasetname$variablename[i]`.)  
+
+You should develop and test your code on a small subset of pages (e.g., the first 5 URLs, then the first 20 URLs), as the full number can take a very long time to run.
+
+```{r}
+# initialize data frame where will store poem text 
+# with two variables (called name and text)
+# update "poem_table_all" with the name you gave the dataset that contains
+# all the poems
+# update "first_line" with the name of the variable within that dataset that 
+# contains the poems' first line / name
+all_poems <- data.frame(name = poems_list[1]
+                        , text = ""
+                        , stringsAsFactors = FALSE)
+
+all_poems <- all_poems %>% 
+  rename(Name = 1) %>% 
+  mutate(Name = gsub(" ", "_", Name))
+
+
+for (i in 1:5){
+  
+  # identify url
+  # UPDATE "datasetname" and "variablename" appropriately
+  url <- all_poems$Name[i]
+  url <- paste0("https://en.wikisource.org/wiki/",url)
+
+  # some of the URLs won't work, so we need to place the scraping
+  # code within the "tryCatch" function which tells R to try to do this,
+  # but if it doesn't work, keep going . . .
+  # (otherwise, the for loop will just terminate at the broken URL)
+  all_poems[i,2] <- tryCatch(
+    # This is what I want to do...
+    { 
+      # PLACE CODE TO SCRAPE TEXT HERE
+      all_poems[i, 2] <- (url %>%               
+        read_html() %>%
+        html_nodes("div p") %>%   
+        html_text)[1]
+      
+     }
+    # ... but if an error occurs, set to Missing and keep going 
+    , error=function(error_message) {
+      return("Missing")
+    }
+  ) 
+  
+all_poems[i, 2]
+}
+```
+
+*This is a good place to pause, commit changes with the commit message "Added loop to scrape many poems", and push.*
+
+# Workflow
+
+Yet again we've been working in a `.Rmd` file to step back-and-forth between instructions and code.  To practice the appropriate workflow, place your scraping code above in a `.R` file (File > New File > R Script).  Save the file as `scrape_poems.R`.
+
+Be sure to make the file reproducible -- include loading the `tidyverse`, `rvest`, and `robotstxt` packages.  Output a csv file, `scrape_poems.csv`, with the data.
+
+*This is a good place to pause, commit your `.R` and `.csv` files with the commit message "Adding scrape_poems.R and scrape_poems.csv files", and push.*
