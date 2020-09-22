@@ -144,21 +144,35 @@ kable(calendar_table, booktabs = TRUE, linesep = "") %>%
 
 ## Summary of Visuals
 
-Through the first plot, I got a pretty clear visualization of how I usually spend a day during this semester. Clearly, time spent on homework dominates class time and exercise. While this seemed clear at the start, it is interesting to see the volatility of my homework schedule compared to the constant patterns of my class time and exercise. From this plot, it is evident that the time I spend on homework heavily depends on my motivation and workload for that day.
+Through the first plot, I got a pretty clear sense of how I usually spend a day during this semester. Clearly, time spent on homework dominates class time and exercise. While this seemed clear at the start, it was interesting to see the volatility of my homework schedule compared to the constant patterns of my class time and exercise. From this plot, it is evident that the time I spend on homework heavily depends on my motivation and workload for that day.
 
 The second visualization accentuates the fact that I am more of a night person. These bar graphs show that I only tend to wake up early for class, but I am the most productive after the afternoon. I tend to do work mostly in the evening and night, and I only worked out exclusively at night. I was particularly surprised with the fact that I only worked out at night, as before quarantine I would always be working out during the afternoon.
 
-Lastly, the table shows 
+Lastly, the table gives a good representation of how much much time I spend on homework versus class. While at the start it was obvious that on average, time spent on homework would exceed class time, it was interesting to ratios confirm my observations made from the first plot. My work to class ratio seems to fluctuate pretty heavily, as the biggest differences seem to occur on Wednesdays, Fridays, and Sundays. Most of my work is due on Mondays and Fridays, so unfortunately this highlights the fact that I tend to procrastinate. On the other hand, it seems that I take Saturday as a stress-free day to relax from the heavy work week, especially since on the second Saturday I did not even record myself doing any work.
 
 \newpage
 
 ## Reflection
 
-• What difficulties in the data collection and analysis process did you encounter? Identify two of your main hurdles in gathering accurate data. estimating start and end time, not getting too specific with data entry
-• What implications does that have for future data collection and/or analysis projects?
-• How much data do you think you’d need to collect in order to answer your question(s) of interest?
-Would it be hard to collect that data? Why or why not?
+This activity highlights the importance of data wrangling for data scientists. In the real world, there are many difficulties regarding data collection, as often times multiple datasets containing hundreds of thousands of observations are sent at different times, and it is a data scientist's job to combine and clean them all. In this assignment, I got a glimpse into the life of a data scientist, as I was required to create, wrangle and visualize the data. 
+
+While the data collection itself did not provide many struggles, as it was as simple as keeping track of activities in a calendar, gathering accurate data was an issue. In my case, I saw myself not recording the exact start and end times, as I rounded to the nearest 5 minute mark or hour. In addition, I was not very specific in my data entry, as my activities could have been much more specific. In particular, I could have recorded what class I was in, the specific class or assignment the homework was for, or even what type of exercise I was doing that day. These limitations will negatively impact future analysis projects. 
+
+One of the main impacts these limitations have is that it can cause inaccurate analyses. There are many implications that stem from inaccurate data, one of which being inaccurate interpretations. While it may not be an issue in context of this problem, if data is not collected under strict rules in the real world it can result in inaccurate and biased results if not handled correctly. These limitations also limit the depth in which one can proceed with this data. The visualizations that I provided are very broad due to the lack of specificity in my data. For example, I would be unable to compare the time I spend on Advanced Data Analysis assignments versus Data Science assignments because I failed to specify that when I recorded my data.
+
+To truly answer my questions of interest, I believe that I would need a much larger sample size. Two weeks does not seem like enough time to fully see all the patterns in my schedule.
+
+There are many expectations when it comes to providing data. One of the biggest expectations is to have organized data. Nowadays, there is a universally preferred standard for organizing and curating data. This includes practicing good code etiquette, organization, naming techniques, as well as using data validation to avoid data entry errors. While we primarily think about the data, metadata is also a crucial part in understanding the data as a whole. A prominent example of this is using a data dictionary, which is a separate file that contains information about the data, such as variable names, explanations of variables, and measurement units. All of these protocols are standards that data scientists are expected to achieve when wrangling data. 
+
+On the other hand, there are also many responsibilities if I were to analyze others' data. There are many ethical issues to consider, such as whether it is appropriate to publish research on data that reveals people's identities and actions, even if it is already publicly available. If I was using sensitive and personally identifiable information, there would be many necessary precautions to make sure it remains private if it is being used. Although data (especially regarding the criminal justice system) are available in the public record or could be scraped from a government website, it is a data scientist's job to determine whether or not they have the obligation to not further ruin these peoples' images. 
+
+• What difficulties in the data collection and analysis process did you encounter? Identify two of your main hurdles in gathering accurate data. estimating exact start and end time, not getting too specific with data entry
+• What implications does that have for future data collection and/or analysis projects? this means that i can't go too in depth with my analysis / can't trust it fully
+• How much data do you think you’d need to collect in order to answer your question(s) of interest? Would it be hard to collect that data? Why or why not?
 • As someone who provides data, what expectations do you have when you give your data (e.g. to
 Facebook, Google, MapMyRun, etc.)?
 • As someone who analyzes others’ data, what ethical responsibilities do you have?
+
+
+
 
