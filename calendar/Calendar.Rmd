@@ -131,7 +131,7 @@ calendar_table <- calendar_table %>%
 calendar_table <- calendar_table[-nrow(calendar_table),]
   
 # Create Table Using Kable
-kable(calendar_table, booktabs = TRUE, linesep = "") %>% 
+kable(calendar_table, booktabs = TRUE, linesep = "", align = "c") %>% 
   kable_styling(latex_options = "HOLD_position") %>% 
   row_spec(0, bold = TRUE) %>% 
   pack_rows("Week 1", 1, 7) %>%
