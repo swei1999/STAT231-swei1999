@@ -136,7 +136,7 @@ kable(calendar_table, booktabs = TRUE, linesep = "", align = "c") %>%
   row_spec(0, bold = TRUE) %>% 
   pack_rows("Week 1", 1, 7) %>%
   pack_rows("Week 2", 8, 13) %>% 
-  footnote(general = "There is no Saturday observation in week 2 because there were no recordings of class or work on that day.",
+  footnote(general = "There were no recordings of class or work on the Saturday of week 2.",
            threeparttable = TRUE)
 ```
 
