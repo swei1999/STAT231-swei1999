@@ -128,7 +128,7 @@ all_poems <- all_poems %>%
   mutate(Name = gsub(" ", "_", Name))
 
 
-for (i in 1:5){
+for (i in 1:10){
   
   # identify url
   # UPDATE "datasetname" and "variablename" appropriately
