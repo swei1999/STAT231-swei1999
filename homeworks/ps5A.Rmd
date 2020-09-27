@@ -51,7 +51,7 @@ In Section 19.1.1, the `grep` and `grepl` functions are introduced for detecting
 
 (Yes, the textbook explains the differences in these commands/calls to these commands, but it can be helpful if you run the lines yourself as well to be sure they work as you'd expect and to inspect the results.) 
 
-> ANSWER: The `grep` first command returns the list of indices in the `macbeth` character vector that the phrase "  MACBETH" appears. When `value = TRUE` is included in the second command, it returns the values of the indices in the `macbeth` character array from the first command. The last `grepl` command returns a vector of `TRUE/FALSE`, where each index of this vector returns whether or not the phrase "  MACBETH" is in the corresponding index of the character index `macbeth.`
+> ANSWER: The `grep` first command returns the indices in the `macbeth` character vector that the phrase "  MACBETH" appears. When `value = TRUE` is included in the second command, it returns the values of the indices in the `macbeth` character array from the first command. The last `grepl` command returns a vector of `TRUE/FALSE`, where each index of this vector returns whether or not the phrase "  MACBETH" is in the corresponding index of the character index `macbeth.`
 
 ```{r}
 # defining "macbeth" object
@@ -80,7 +80,7 @@ Section 19.1.1 also introduces regular expressions.  Why do the two lines below 
 
 (Yes, the textbook explains the differences, but it can be helpful if you run the lines yourself as well to be sure they work as you'd expect and to inspect the results.) 
 
-> ANSWER: These two commands differ because the "\\" searches for the literal value of "." In this example, the first command returns the values of the indices in the character vector `macbeth` that contain the phrase "MACBETH.", while the second command returns "MACBETH" followed by any other character.
+> ANSWER: These two commands differ because the double \\ searches for the literal value of "." In this example, the first command returns the values of the indices in the character vector `macbeth` that contain the phrase "MACBETH.", while the second command returns "MACBETH" followed by any other character.
 
 ```{r}
 head(grep("MACBETH\\.", macbeth, value = TRUE))
@@ -117,6 +117,7 @@ Uncomment and run the code below to ensure the same results are returned for eac
 
 In section 19.2.2, the `wordcloud` package is used to create a word cloud based on text in abstracts from Data Science articles in arXiv (which is "a fast-growing electronic repository of preprints of scientific papers from many disciplines").  I've provided some code below to get you started coding along with the example.  *This part (d) will not be graded, but is included to encourage you to test and explore some of the code in the extended example.*  What words are included in `tidytexts`'s `stop_words` dataset?  Do you think all of these words should be considered stop words (i.e. excluded from analysis) in all scenarios?  Are there any that might be useful in some contexts?  
 
+
 ```{r}
 # note that the tidytext, aRxiv, and wordcloud packages were loaded in the 
 # setup code chunk at the top of the program
@@ -139,6 +140,7 @@ DataSciencePapers <- DataSciencePapers %>%
 
 # stop words dataset provided by the tidytext package
 stop_words <- tidytext::stop_words
+stop_words
 
 # the unnest_tokens function is from the tidytext package
 arxiv_words <- DataSciencePapers %>%
