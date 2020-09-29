@@ -266,16 +266,16 @@ There are different lexicons that can be used to classify the sentiment of text.
 
 The AFINN lexicon (Nielsen 2011) assigns words a score from -5 (negative sentiment) to +5 (positive sentiment).  Check out the AFINN lexicon using the code below.  What do you think of the scores?  What is the rating for the word "slick"?  Does "slick" always have a positive connotation (can you think of a sentence where "slick" has a negative connotation)?
 
-> ANSWER:
+> ANSWER: it has a rating of +2, although it sometimes may have some negative connotations.
 
 ```{r}
 afinn_lexicon <- get_sentiments("afinn")
-
+filter(afinn_lexicon, word == "slick")
 ```
 
 Use the `get_sentiments` function to create a dataframe `nrc_lexicon` that holds the NRC Word-Emotion Association lexicon (Mohammad 2010).  The NRC lexicon catergoizes words as yes/no for the following sentiment categories: positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust.  What does each row in this dataset represent? (Hint: it's *not* the same as the `afinn_lexicon` dataset.)
 
-> ANSWER: It's essentially the long format for a word
+> ANSWER: It's essentially the long format for the words
 
 ```{r}
 nrc_lexicon <- get_sentiments("nrc")
@@ -286,11 +286,11 @@ User (and Consumer!) Beware:
 
 - Do you see any issues in applying these lexicons (developed fairly recently) to the Emily Dickinson poems?
 
-> ANSWER:  
+> ANSWER: Yes, the poemsn were written long ago so meanings can change and spellings can change.
 
 - The lexicons are based on unigrams.  Do you see any disadvantages of basing the sentiment on single words?
 
-> ANSWER: 
+> ANSWER: Yes, sentiments could be expessed in phrases that wouldn't get picked up.
 
 
 We can calculate how many words used in the poems are not found in the lexicons.  Run the code below.  List a few words that are not in the NRC lexicon that appear in the poems.  What proportion of unigrams observed within this corpora of Dickinson poems are *not* scored by the NRC lexicon?  
