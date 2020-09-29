@@ -129,7 +129,8 @@ ggplot(data = justices2, aes(x = tenure_length)) +
 a. Confirm (using an R command) that automated scraping of the Brainy Quote webpage (https://www.brainyquote.com/) is allowed.
 
 ```{r}
-
+url <- "https://www.brainyquote.com/"
+paths_allowed(url)
 ```
 
 
@@ -176,16 +177,34 @@ Go to BrainyQuote.com and search a different topic (or search an Author) that in
 
 ```{r, eval = FALSE}
 ## Add your code that is in quotes.R to this code chunk.  KEEP the "eval=FALSE" option in this code chunk option, as you do NOT want to evaluate it (which would re-scrape the website everytime you knit this file).  (We do want the grader to be able to see the code, though, as you'll only submit this one knit PDF to Gradescope.)
+humor_quotes <- read_html("https://www.brainyquote.com/topics/humor-quotes")
 
+quotes <- humor_quotes %>%
+  html_nodes(".oncl_q") %>%
+  html_text()
 
+person <- humor_quotes %>%
+  html_nodes(".oncl_a") %>%
+  html_text()
+
+# put in data frame with two variables (person and quote)
+humor_quotes_final <- data.frame(person = person, quote = quotes
+                         , stringsAsFactors = FALSE) %>%
+  mutate(together = paste('"', as.character(quote), '" --'
+                          , as.character(person), sep=""))
+
+path <- "/Users/seanwei/Desktop/STAT231-swei1999/homeworks/ps5B"
+write_csv(x = humor_quotes_final, path = paste0(path, "/quotes.csv"))
 ```
 
 
 \newpage
 c. Load `quotes.csv` into this file using the `read_csv` function.  Write code to select *three* of the quotes at random and print them (i.e., set `size = 3` in the `sample` function).
 
-```{r, linewidth = 60}
-
+```{r, linewidth = 60, message = FALSE}
+set.seed(1823489)
+humor_quotes_final <- read_csv("/Users/seanwei/Desktop/STAT231-swei1999/homeworks/ps5b/quotes.csv")
+sample(humor_quotes_final$together, 3, replace = FALSE)
 ```
 
 

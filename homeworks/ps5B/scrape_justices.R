@@ -4,5 +4,5 @@ justices <- url %>%
   html_nodes("table")
 justices <- html_table(justices[[2]], fill = TRUE)
 
-path <- "/Users/seanwei/Desktop/STAT231-swei1999/homeworks"
+path <- "/Users/seanwei/Desktop/STAT231-swei1999/homeworks/ps5B"
 write_csv(x = justices, path = paste0(path, "/justices.csv"))
