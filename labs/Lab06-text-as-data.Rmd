@@ -57,7 +57,7 @@ Hint: if the `read_csv` code below doesn't work, it's probably because R is not 
 ```{r}
 # even using the URLs embedded in the HTML code, some did not work
 # remove the poems for which we don't have the text
-path_in <- "INSERT PATH HERE"
+path_in <- "/Users/seanwei/Desktop/STAT231-swei1999/data"
 poems <- read_csv(paste0(path_in,"/DickinsonPoems.csv")) %>%
   filter(text != "Missing")
 ```
@@ -195,7 +195,19 @@ wordcloud(word_frequencies$word, word_frequencies$n
 Your turn: create a word cloud with 100 words.
 
 ```{r}
-
+wordcloud(word_frequencies$word, word_frequencies$n
+          , min.freq=1
+          , max.words=100
+          # plot the words in a random order
+          , random.order=T
+          # specify the range of the size of the words
+          , scale=c(2,0.3)
+          # specify proportion of words with 90 degree rotation
+          , rot.per=.15
+          # colors words from least to most frequent
+          , colors = pal
+          # font family
+          , family="sans")
 ```
 
 
@@ -207,7 +219,7 @@ The `bind_tf_idf` function will compute the tf, idf, and tf-idf statistics for u
 
 This time, we do not need to remove stop words.  Why not?
 
-> ANSWER: 
+> ANSWER: idf are weighted less for words that are more likely to appear
 
 ```{r}
 word_freqs_by_poem <- poems %>%
@@ -263,11 +275,10 @@ afinn_lexicon <- get_sentiments("afinn")
 
 Use the `get_sentiments` function to create a dataframe `nrc_lexicon` that holds the NRC Word-Emotion Association lexicon (Mohammad 2010).  The NRC lexicon catergoizes words as yes/no for the following sentiment categories: positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust.  What does each row in this dataset represent? (Hint: it's *not* the same as the `afinn_lexicon` dataset.)
 
-> ANSWER:
+> ANSWER: It's essentially the long format for a word
 
 ```{r}
 nrc_lexicon <- get_sentiments("nrc")
-
 ```
 
 
