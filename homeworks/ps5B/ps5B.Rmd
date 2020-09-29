@@ -91,7 +91,7 @@ c. Load `justices.csv` into this file using the `read_csv` function.  Then, run 
 
 Create a visualization to show the distribution of tenure length of U.S. Supreme Court judges.  Interpret the plot.
 
-> ANSWER:   
+> ANSWER: The histogram below shows the distribution of tenure length of U.S. Supreme Court judges. From the plot, there seems to be around 2 clear peaks, which conveys that the majority of judges are tenured for around 5 and 15 years.
 
 ```{r message = FALSE, warning = FALSE}
 justices <- read_csv("/Users/seanwei/Desktop/STAT231-swei1999/homeworks/ps5b/justices.csv")
@@ -113,9 +113,13 @@ justices2 <- justices %>%
   mutate(date_confirmed = lubridate::mdy(date_confirmed_vote))
 ```
 
-```{r}
+```{r message = FALSE}
 # Distribution of tenure length of U.S. Supreme Court judges
-
+ggplot(data = justices2, aes(x = tenure_length)) +
+  geom_histogram(color = rainbow(n = 30), fill = "white") + 
+  labs(x = "Tenure Length (years)", y = "Count") + 
+  ggtitle("Distribution of Tenure Length of U.S.
+          Supreme Court Judges")
 ```
 
 
