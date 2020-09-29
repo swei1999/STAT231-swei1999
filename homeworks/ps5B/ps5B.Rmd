@@ -118,8 +118,7 @@ justices2 <- justices %>%
 ggplot(data = justices2, aes(x = tenure_length)) +
   geom_histogram(color = rainbow(n = 30), fill = "white") + 
   labs(x = "Tenure Length (years)", y = "Count") + 
-  ggtitle("Distribution of Tenure Length of U.S.
-          Supreme Court Judges")
+  ggtitle("Distribution of Tenure Length of U.S. Supreme Court Judges")
 ```
 
 
