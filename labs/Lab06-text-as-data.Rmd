@@ -1,0 +1,331 @@
+---
+title: "Lab 6 - Text as Data"
+subtitle: "Emily Dickinson Poems"
+date: "September 29, 2020"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes 
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(eval = FALSE
+                      , warning = FALSE
+                      , message = FALSE)
+# change displayed number of digits in R Markdown document
+options(digits = 2)
+```
+
+*"Faith" is a fine invention*  
+*When Gentlemen can see -*  
+*But Microscopes are prudent*  
+*In an Emergency.*  
+- Emily Dickinson (Ref: ["Faith" is a fine invention](https://en.wikisource.org/wiki/%22Faith%22_is_a_fine_invention))
+
+Did you know that the [Emily Dickinson Museum](https://www.emilydickinsonmuseum.org/) is located walking distance from the Amherst College campus?  In usual semesters, I like to take my Data Science class to visit the museum -- a tradition started by Prof. Horton with his Data Science classes.  Unfortunately, a museum visit won't be able to happen this semester, but I encourage you to take a tour once it safely opens again! 
+
+Today we're going to analyze Dickinson's poetry.  The text for her poems were scraped from Wikipedia (the final web scraping code I used is [here](https://github.com/stat231-f20/course-content/blob/master/labs/scrape_poems_ex3.R)).
+
+# Packages
+
+In this lab we will work with the familiar `tidyverse` and `janitor` packages.  There are three new packages we'll be using: 
+
+(1) the `tidytext` package, which makes text analysis easier and is consistent with the tools we've been using in the `tidyverse` package;  
+(2) the `wordcloud` package which allows us to visually represent the text data in wordclouds; and  
+(3) the `textdata` package which allows us to access lexicons for sentiment analysis.  
+
+If working on your own machine, you may need to install these packages before loading (using the `install.packages()` command or by going to Tools > Install Packages) .
+
+```{r message=FALSE}
+library(tidyverse) 
+library(janitor)
+
+library(tidytext)
+library(wordcloud)
+library(textdata)
+```
+
+# The data
+
+The dataset we'll be working with today is saved in a CSV file in the "Data" folder of our course-content repository on GitHub.  After you've pulled the course-content repo, copy over the folder and the csv file to your repo.
+
+Hint: if the `read_csv` code below doesn't work, it's probably because R is not looking in the correct place for the file.  Check that you have the file "DickinsonPoems.csv" in YOUR repo, and check the correct file path.  
+
+```{r}
+# even using the URLs embedded in the HTML code, some did not work
+# remove the poems for which we don't have the text
+path_in <- "INSERT PATH HERE"
+poems <- read_csv(paste0(path_in,"/DickinsonPoems.csv")) %>%
+  filter(text != "Missing")
+```
+
+\newpage
+# Tidy text
+
+## tokenizing
+
+The `unnest_tokens` function from the `tidytext` package takes on two main arguments: `output` and `input`.  `output` assigns a variable name for the new variable that will hold the words, and `input` identifies the variable in your dataframe that holds the text.  For instance, in the code below, we're unnesting the variable `text` and the new data frame `poems_words` will contain a variable `word`.
+
+```{r}
+poems_words <- poems %>%
+  unnest_tokens(output = word, input = text)
+```
+
+The default unit for tokenizing is a word.  But you can specify the `token=` option to tokenize the text by other functions, such as "characters", "ngrams", "sentences", or "lines", among other options.  Try one!  See how it changes the output dataset.
+
+```{r}
+poems_ngrams <- poems %>%
+  unnest_tokens(output = word, input = text
+                , token = "ngrams", n = 2)
+
+```
+
+## removing stop words
+
+Many commonly used words like "the", "if", and "or" don't provide any insight into the text and are not useful for an analysis.  These are called stop words, and are often removed before analysis.   
+
+The `tidytext` package  provides a dataframe with stop words from three differnt lexicons (onix, snowball, and SMART).  
+
+We can use this `stop_words` dataset to remove all the stop words from our `poems_words` dataset.  
+
+```{r}
+# first, take a look at the stop_words dataset
+data(stop_words)
+head(stop_words)
+tail(stop_words)
+stop_words %>% count(lexicon)
+
+# goes from n=91,190 rows to n=37,171 words
+# > 54,000 stop words removed!
+poems_words2 <- poems_words %>%
+  anti_join(stop_words, by="word")
+
+# check stop words removed
+# note that if you didn't want all these words removed, you could modify the stop_words dataframe before `anti_join`ing above ...
+removed <- poems_words %>%
+  anti_join(poems_words2, by="word") %>%
+  count(word) %>%
+  arrange(word)
+
+head(removed)
+```
+
+We can now use functions we already know and love to create a simple plot of the 10 most common words used, for instance.
+
+```{r}
+poems_words2 %>%
+  count(word, sort = TRUE) %>% 
+  slice(1:10) %>%
+  ggplot(aes(x = reorder(word,n), y = n, color = word, fill=word)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(y = "Number of instances"
+       , title="The most common words in Emily Dickinson's poems") +
+  guides(color = "none", fill = "none")
+```
+
+Note that if we hadn't removed the stop words first, all of the most common words identified would be stop words:
+
+```{r}
+poems_words %>%
+  count(word, sort = TRUE) %>% 
+  slice(1:10) %>%
+  ggplot(aes(x = reorder(word,n), y = n, color = word, fill=word)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(y = "Number of instances"
+       , title="The most common words in Emily Dickinson's poems") +
+  guides(color = "none", fill = "none")
+```
+
+
+# Term frequency 
+
+To recap, it really only took 4 lines of code to get from our scraped dataset to a dataset formatted for plotting word frequencies:
+
+```{r}
+word_frequencies <- poems %>%
+  unnest_tokens(output = word, input = text) %>%
+  anti_join(stop_words, by="word") %>%
+  count(word, sort = TRUE) 
+```
+
+## Word cloud
+
+Word clouds can be used as a quick visualization of the prevalence of words in a corpus.  A bare-bones word cloud using the `wordcloud` function from the `wordcloud` package:
+
+```{r}
+# using piping 
+word_frequencies %>%
+  with(wordcloud(words = word, freq = n, max.words=50))
+
+# referencing variables directly
+wordcloud(words = word_frequencies$word
+          , freq = word_frequencies$n, max.words=50)
+```
+
+Note: if you get an error "Error in plot.new() : figure margins too large" or a message "[word] could not be fit on page. It will not be plotted.", try re-adjusting the size of your Plots tab (or this pane, if your output is shown inline).
+
+Map size *and color* to frequency:
+
+```{r}
+# choose color palette from color brewer
+pal <- brewer.pal(10, "Paired")
+
+wordcloud(word_frequencies$word, word_frequencies$n
+          , min.freq=20
+          , max.words=50
+          # plot the words in a random order
+          , random.order=T
+          # specify the range of the size of the words
+          , scale=c(2,0.3)
+          # specify proportion of words with 90 degree rotation
+          , rot.per=.15
+          # colors words from least to most frequent
+          , colors = pal
+          # font family
+          , family="sans")
+```
+
+Your turn: create a word cloud with 100 words.
+
+```{r}
+
+```
+
+
+## tf-idf
+
+The idea of tf-idf is to find the important words for the content of each document by decreasing the weight for commonly used words and increasing the weight for words that are not used very much in a corpus, in this case, the collection of Emily Dickinson's poems as a whole.
+
+The `bind_tf_idf` function will compute the tf, idf, and tf-idf statistics for us so long as we provide a dataset that is one row per poem-word (that is, one row per word per poem).  We need a variable to indicate which poem the word comes from, a variable to indicate the word, and a third variable to indicate the number of times that word appears in that specific poem.
+
+This time, we do not need to remove stop words.  Why not?
+
+> ANSWER: 
+
+```{r}
+word_freqs_by_poem <- poems %>%
+  unnest_tokens(output = word, input = text) %>%
+  group_by(title) %>%
+  count(word) 
+
+tfidf <- word_freqs_by_poem %>%
+  bind_tf_idf(term = word, document = title, n = n)
+```
+
+We can visualize the high tf-idf words using the code below:  
+
+```{r}
+set.seed(200929)
+samp <- sample(poems$title, size = 4)
+
+top_tfidf <- tfidf %>%
+  filter(title %in% samp) %>%
+  arrange(desc(tf_idf)) %>%
+  group_by(title) %>%
+  slice(1:10) %>% 
+  ungroup()
+
+#dev.off()
+
+ggplot(data=top_tfidf, aes(x = reorder(word,tf_idf)
+                           , y = tf_idf
+                           , fill = title)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~ title, ncol = 2, scales = "free") +
+  coord_flip()
+```
+
+
+# Sentiment analysis
+
+What is sentiment analysis?  From Text Mining with R (Silge & Robinson 2019):
+
+"When human readers approach a text, we use our understanding of the emotional intent of words to infer whether a section of text is positive or negative, or perhaps characterized by some other more nuanced emotion like surprise or disgust. We can use the tools of text mining to approach the emotional content of text programmatically . . . One way to analyze the sentiment of a text is to consider the text as a combination of its individual words and the sentiment content of the whole text as the sum of the sentiment content of the individual words. This isn't the only way to approach sentiment analysis, but it is an often-used approach."
+
+There are different lexicons that can be used to classify the sentiment of text.  Today, we'll compare two different lexicons that are both based on unigrams, the AFINN lexicon and the NRC lexicon.
+
+The AFINN lexicon (Nielsen 2011) assigns words a score from -5 (negative sentiment) to +5 (positive sentiment).  Check out the AFINN lexicon using the code below.  What do you think of the scores?  What is the rating for the word "slick"?  Does "slick" always have a positive connotation (can you think of a sentence where "slick" has a negative connotation)?
+
+> ANSWER:
+
+```{r}
+afinn_lexicon <- get_sentiments("afinn")
+
+```
+
+Use the `get_sentiments` function to create a dataframe `nrc_lexicon` that holds the NRC Word-Emotion Association lexicon (Mohammad 2010).  The NRC lexicon catergoizes words as yes/no for the following sentiment categories: positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust.  What does each row in this dataset represent? (Hint: it's *not* the same as the `afinn_lexicon` dataset.)
+
+> ANSWER:
+
+```{r}
+nrc_lexicon <- get_sentiments("nrc")
+
+```
+
+
+User (and Consumer!) Beware: 
+
+- Do you see any issues in applying these lexicons (developed fairly recently) to the Emily Dickinson poems?
+
+> ANSWER:  
+
+- The lexicons are based on unigrams.  Do you see any disadvantages of basing the sentiment on single words?
+
+> ANSWER: 
+
+
+We can calculate how many words used in the poems are not found in the lexicons.  Run the code below.  List a few words that are not in the NRC lexicon that appear in the poems.  What proportion of unigrams observed within this corpora of Dickinson poems are *not* scored by the NRC lexicon?  
+
+> ANSWER: 
+
+```{r}
+# identify words in word_frequencies dataset (which has stop words removed) that are not the NRC lexicon
+nrc_missed_words <- word_frequencies %>%
+  anti_join(nrc_lexicon, by="word")
+```
+
+With these (rather important!) drawbacks in mind, let's go ahead and view the top words by sentiment classified by the NRC lexicon. That is, create a figure of the top 10 words under each sentiment, facetted by sentiment, for the following sentiments: anger, anticipation, fear, joy, surprise, and trust.  You can use code given in earlier chunks to guide you.
+
+```{r}
+
+
+```
+
+
+How might one summarize the sentiment of this corpus using the AFINN lexicon?
+
+> ANSWER:
+
+
+
+\newpage
+# References
+
+### AFINN Lexicon
+
+Nielsen, FA. A new ANEW: Evaluation of a word list for sentiment analysis in microblogs. Proceedings of the ESWC2011 Workshop on 'Making Sense of Microposts': Big things come in small packages 718 in CEUR Workshop Proceedings 93-98. 2011 May. http://arxiv.org/abs/1103.2903.
+
+### NRC Lexicon
+
+Mohammad S, Turney P. Crowdsourcing a Word-Emotion Association Lexicon. \textit{Computational Intelligence}. 2013;29(3):436-465.    
+
+Mohammad S, Turney P. Emotions Evoked by Common Words and Phrases: Using Mechanical Turk to Create an Emotion Lexicon. In Proceedings of the NAACL-HLT 2010 Workshop on Computational Approaches to Analysis and Generation of Emotion in Text, June 2010, LA, California.   
+
+http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm
+
+
+### Text Mining with R
+
+Silge J, Robinson D (2016). "tidytext: Text Mining and Analysis Using Tidy Data Principles in R." _JOSS_, *1*(3). doi: 10.21105/joss.00037 (URL: https://doi.org/10.21105/joss.00037).
+
+Silge J, Robinson D (2017). Text Mining with R: A Tidy Approach. O'Reilly Media Inc. Sebastopol, CA.  
+
+https://www.tidytextmining.com/index.html

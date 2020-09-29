@@ -1,0 +1,178 @@
+---
+title: "STAT 231: Problem Set 5B"
+author: " "
+date: "due by 5 PM on Friday, October 2"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+This homework assignment is designed to help you futher ingest, practice, and expand upon the material covered in class over the past week(s).  You are encouraged to work with other students, but all code and text must be written by you, and you must indicate below who you discussed the assignment with (if anyone).  
+
+Steps to proceed:
+
+\begin{enumerate}
+\item In RStudio, go to File > Open Project, navigate to the folder with the course-content repo, select the course-content project (course-content.Rproj), and click "Open" 
+\item Pull the course-content repo (e.g. using the blue-ish down arrow in the Git tab in upper right window)
+\item Copy ps5B.Rmd from the course repo to your repo (see page 6 of the GitHub Classroom Guide for Stat231 if needed)
+\item Close the course-content repo project in RStudio
+\item Open YOUR repo project in RStudio
+\item In the ps5B.Rmd file in YOUR repo, replace "YOUR NAME HERE" with your name
+\item Add in your responses, committing and pushing to YOUR repo in appropriate places along the way
+\item Run "Knit PDF" 
+\item Upload the pdf to Gradescope.  Don't forget to select which of your pages are associated with each problem.  \textit{You will not get credit for work on unassigned pages (e.g., if you only selected the first page but your solution spans two pages, you would lose points for any part on the second page that the grader can't see).} 
+\end{enumerate}
+
+```{r, setup, include=FALSE}
+library(tidyverse)
+library(robotstxt)
+library(rvest)
+library(knitr)
+library(janitor)
+
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+
+# to wrap the text when printing quotes for Brainy Quotes exercise
+hook_output = knit_hooks$get("output")
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+
+\newpage 
+# If you discussed this assignment with any of your peers, please list who here:
+
+> ANSWER:
+
+\newpage
+# 1. Justices of the Supreme Court of the United States 
+
+a. Confirm (using an R command) that the following Wikipdeia page allows automated scraping:
+https://en.wikipedia.org/wiki/List_of_justices_of_the_Supreme_Court_of_the_United_States
+
+
+```{r}
+
+
+```
+
+\newpage
+b. Go to the [List of Justices of the Supreme Court of the United States](https://en.wikipedia.org/wiki/List_of_justices_of_the_Supreme_Court_of_the_United_States) and scrape the table for the Justices.  Write, test, and save your code in an R script called `scrape_justices.R`, and write the data frame out to a csv file called `justices.csv` using the `write_csv` function.
+
+*Be sure to push your .R and .csv files to your GitHub repo.*
+
+
+```{r eval=FALSE}
+## Add your code that is in justices.R to this code chunk.  KEEP the "eval=FALSE" option in this code chunk option, as you do NOT want to evaluate it (which would re-scrape the website everytime you knit this file).  (We do want the grader to be able to see the code, though, as you'll only submit this one knit PDF to Gradescope.)
+
+
+```
+
+
+\newpage 
+c. Load `justices.csv` into this file using the `read_csv` function.  Then, run the code given below to create the variable `tenure_length` (a numeric variable containing each justice's tenure on the bench).
+
+Create a visualization to show the distribution of tenure length of U.S. Supreme Court judges.  Interpret the plot.
+
+> ANSWER:   
+
+```{r}
+justices <- read_csv("INSERT YOUR PATH HERE/justices.csv")
+
+justices2 <- justices %>%
+  clean_names() %>%
+  # remove extra line that comes in at end of table
+  filter(justice != "Justice") %>%
+  # some justices served less than 1 year, adjust their length so can 
+  # separate correctly
+  mutate(tenure_length_temp = case_when(str_detect(tenure_length_d, "year") ~ tenure_length_d
+                                   , TRUE ~ paste0("0 years, ", tenure_length_d))) %>%
+  separate(tenure_length_temp, into = c("years_char", "days_char"), sep = ","
+           , remove = FALSE) %>%
+  mutate(tenure_length = parse_number(years_char) + (parse_number(days_char)/365)) %>%
+  # create date confirmed as date variable
+  separate(date_confirmed_vote, into = c("date_confirmed_vote", "extra")
+           , sep = "\\(") %>%
+  mutate(date_confirmed = lubridate::mdy(date_confirmed_vote))
+
+
+```
+
+
+\newpage
+# 2. Brainy Quotes
+
+a. Confirm (using an R command) that automated scraping of the Brainy Quote webpage (https://www.brainyquote.com/) is allowed.
+
+```{r}
+
+```
+
+
+\newpage
+b.  Life can get frustrating at times.  Like when we're trying to Zoom and our internet cuts out.  Or when we can't figure out why R's throwing an error when we try to clone a GitHub repo in RStudio.  Or, when COVID-19 upends life as we knew it.  In these times, it can't hurt to be reminded of the power of persistence, resilience and optimism. 
+
+The code in the first R code chunk below scrapes the first 40 quotes returned from a search for "resilience" on BrainyQuote.com. (Do NOT remove the "eval = FALSE" option from that code chunk; you do not want it to evaluate it, i.e. scrape the site, every time you knit this file.)
+
+The code in the second R code chunk below randomly selects a quote and prints it.  When you're feeling frustrated, run that code chunk to randomly generate a quote to lift you up (or just make you laugh at the uselessness of the quote; some of them are pretty pathetic . . .).
+
+Note that CSS selector gadget was used to identify the key words to specify in the `html_nodes` function (i.e. ".oncl_q" and ".oncl_a").  These key words will vary depending on what webpage and what particular objects from that webpage you're trying to scrape.
+
+
+```{r, eval = FALSE}
+quotes_html <- read_html("https://www.brainyquote.com/topics/resilience-quotes")
+
+quotes <- quotes_html %>%
+  html_nodes(".oncl_q") %>%
+  html_text()
+
+person <- quotes_html %>%
+  html_nodes(".oncl_a") %>%
+  html_text()
+
+# put in data frame with two variables (person and quote)
+quotes_dat <- data.frame(person = person, quote = quotes
+                         , stringsAsFactors = FALSE) %>%
+  mutate(together = paste('"', as.character(quote), '" --'
+                          , as.character(person), sep=""))
+```
+
+
+```{r, linewidth = 60}
+quotes_dat <- read_csv("http://kcorreia.people.amherst.edu/F2021/resilience_quotes.csv")
+
+quote_for_the_day <- quotes_dat[sample(1:nrow(quotes_dat), size = 1),]
+
+quote_for_the_day$together
+```
+
+Go to BrainyQuote.com and search a different topic (or search an Author) that interests you.  Scrape the webpage returned from your search following the same code given above.   Save your code in an R script called `scrape_quotes.R`, and write the data frame out to a csv file called `quotes.csv` using the `write_csv` function. 
+
+*Be sure to push your .R and .csv files to your GitHub repo.*
+
+```{r, eval = FALSE}
+## Add your code that is in quotes.R to this code chunk.  KEEP the "eval=FALSE" option in this code chunk option, as you do NOT want to evaluate it (which would re-scrape the website everytime you knit this file).  (We do want the grader to be able to see the code, though, as you'll only submit this one knit PDF to Gradescope.)
+
+
+```
+
+
+\newpage
+c. Load `quotes.csv` into this file using the `read_csv` function.  Write code to select *three* of the quotes at random and print them (i.e., set `size = 3` in the `sample` function).
+
+```{r, linewidth = 60}
+
+```
+
+
