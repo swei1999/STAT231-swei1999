@@ -1,0 +1,226 @@
+---
+title: "STAT 231: Problem Set 6B"
+author: "Sean Wei"
+date: "due by 5 PM on Friday, October 9"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+This homework assignment is designed to help you futher ingest, practice, and expand upon the material covered in class over the past week(s).  You are encouraged to work with other students, but all code and text must be written by you, and you must indicate below who you discussed the assignment with (if anyone).  
+
+Steps to proceed:
+
+\begin{enumerate}
+\item In RStudio, go to File > Open Project, navigate to the folder with the course-content repo, select the course-content project (course-content.Rproj), and click "Open" 
+\item Pull the course-content repo (e.g. using the blue-ish down arrow in the Git tab in upper right window)
+\item Copy ps6B.Rmd from the course repo to your repo (see page 6 of the GitHub Classroom Guide for Stat231 if needed)
+\item Close the course-content repo project in RStudio
+\item Open YOUR repo project in RStudio
+\item In the ps6B.Rmd file in YOUR repo, replace "YOUR NAME HERE" with your name
+\item Add in your responses, committing and pushing to YOUR repo in appropriate places along the way
+\item Run "Knit PDF" 
+\item Upload the pdf to Gradescope.  Don't forget to select which of your pages are associated with each problem.  \textit{You will not get credit for work on unassigned pages (e.g., if you only selected the first page but your solution spans two pages, you would lose points for any part on the second page that the grader can't see).} 
+\end{enumerate}
+
+```{r, setup, include=FALSE}
+library(tidyverse)
+library(tidytext)
+library(wordcloud)
+library(textdata)
+
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+```
+
+
+\newpage 
+# If you discussed this assignment with any of your peers, please list who here:
+
+> ANSWER:
+
+\newpage
+# Trump Tweets
+
+David Robinson, Chief Data Scientist at DataCamp, wrote a blog post ["Text analysis of Trump's tweets confirms he writes only the (angrier) Android half"](http://varianceexplained.org/r/trump-tweets/).
+
+He provides a dataset with over 1,500 tweets from the account realDonaldTrump between 12/14/2015 and 8/8/2016.  We'll use this dataset to explore the tweeting behavior of realDonaldTrump during this time period.
+
+First, read in the file. Note that there is a `TwitteR` package which provides an interface to the Twitter web API.  We'll use this R dataset David created using that package so that you don't have to set up Twitter authentication.  
+
+```{r}
+load(url("http://varianceexplained.org/files/trump_tweets_df.rda"))
+```
+
+## A little wrangling to warm-up
+
+1a.  There are a number of variables in the dataset we won't need.  
+
+- First, confirm that all the observations in the dataset are from the screen-name `realDonaldTrump`.  
+
+- Then, create a new dataset called `tweets` that only includes the following variables:
+
+- `text`
+- `created`
+- `statusSource`
+
+```{r}
+# Confirm that realDonaldTrump is the only screen name in the dataset
+unique(trump_tweets_df$screenName)
+
+# New dataset with only text, created, and statusSource
+tweets <- trump_tweets_df %>% 
+  select(text, created, statusSource)
+glimpse(tweets)
+```
+
+\newpage
+1b. Using the `statusSource` variable, compute the number of tweets from each source.  How many different sources are there?  How often are each used?
+
+> ANSWER: There are 5 unique tweet sources: Instagram, Twitter for Android, Twitter for iPad, Twitter for iPhone, and Twitter Web Client. There were 762 tweets from Twitter for Android, 628 tweets from Twitter for iPhone, 120 tweets from Twitter Web Client, and 1 tweet from both Instagram and Twitter for iPad.
+
+```{r}
+# Isolate the text in the anchor tags
+tweet_sources <- tweets %>% 
+  mutate(
+    statusSource = gsub("</a>", "", statusSource),
+    statusSource = gsub(".*>", "", statusSource)
+  )
+glimpse(tweet_sources)
+
+# Put each observation in statusSource into one big string separated by commas
+source_count <- paste(tweet_sources$statusSource, collapse = ",")
+
+# Turn large string into a character array
+source_count <- strsplit(source_count, ",")
+
+# Create frequency table for the character array
+table(source_count)
+```
+
+\newpage
+1c. We're going to compare the language used between the Android and iPhone sources, so only want to keep tweets coming from those sources.  Explain what the `extract` function (from the `tidyverse` package) is doing below.  (Note that "regex" stands for "regular expression".)
+
+> ANSWER: The `extract` function is given a regular expression to find groups and then makes a new column based on them. Below, the `extract` function looks for instances that begin with "Twitter for" and then makes a new column with values of what comes after it and before the <. If the statusSource doesn't match this regex, the value of the new column is N/A.
+
+```{r}
+tweets2 <- tweets %>%
+  extract(col = statusSource, into = "source"
+          , regex = "Twitter for (.*)<"
+          , remove = FALSE) %>%
+  filter(source %in% c("Android", "iPhone"))
+glimpse(tweets2)
+```
+
+
+\newpage
+## How does the language of the tweets differ by source?  
+
+2a. Create a word cloud for the top 50 words used in tweets sent from the Android.  Create a second word cloud for the top 50 words used in tweets sent from the iPhone.  How do these word clouds compare?  (Are there some common words frequently used from both sources? Are the most common words different between the sources?)
+
+Don't forget to remove stop words before creating the word cloud.  Also remove the terms "https" and "t.co".
+
+> ANSWER: The wordcloud generated by the Android tweets seem to be more focused on his opponents. The most common word being "Hillary," and other accompanying words such as "crooked" and "bad" imply that these tweets were created to negatively portray the other candidates. On the other hand, the iPhone tweets seemed to be more geared to progressing his campaign. While "Hillary" is also very common, common words in the iPhone tweets are "trump2016," "makeamericagreatagain," and "votetrump." Although there are many common words shared in both the Android and iPhone tweets, it appears that the motivation behind the tweets differed.
+
+```{r, fig.width=8, fig.height=8, message = FALSE}
+data("stop_words")
+
+# Add https and t.co to stop words list
+custom_stop_words <- tribble(
+  ~word,  ~lexicon,
+  "https", "CUSTOM",
+  "t.co", "CUSTOM"
+)
+
+stop_words <- bind_rows(stop_words, custom_stop_words)
+
+# Create wordcloud for Android 
+android <- tweets2 %>% 
+  filter(source == "Android") %>% 
+  rename(tweet = text) # can't replicate text column
+
+android <- tibble(text = android$tweet) %>%
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  count(word, sort = TRUE) %>% 
+  head(50)
+
+wordcloud2::wordcloud2(data=android, size = 0.5, color='random-dark')
+
+# Create wordcloud for iPhone 
+iphone <- tweets2 %>% 
+  filter(source == "iPhone") %>% 
+  rename(tweet = text) # can't replicate text column
+
+iphone <- tibble(text = iphone$tweet) %>%
+  unnest_tokens(word, text) %>% 
+  anti_join(stop_words) %>% 
+  count(word, sort = TRUE) %>% 
+  head(50)
+
+wordcloud2::wordcloud2(data=iphone, size = 0.5, color='random-dark')
+```
+
+\newpage
+2b. Create a visualization that compares the top 10 *bigrams* appearing in tweets by each source (that is, facet by source).  After creating a dataset with one row per bigram, you should remove any rows that contain a stop word within the bigram.  
+
+How do the top used bigrams compare between the two sources?
+
+> ANSWER: Looking at the visualization, there are similar conclusions to be made as above. The top bigrams of the Android tweets are much more negative and targeted towards his opponents, such as "crooked hillary," "lyin ted," and "bad judgement." On the other hand, the iPhone tweet bigrams are much more focused on gaining support for his campaign, with phrases such as "makeamericagreatagain trump2016," "america safe," "america trump2016," "indiana trump2016," "trump2016 americafirst," and "trump2016 supertuesday." 
+
+```{r message = FALSE}
+library(tidytext)
+
+# Get bigrams of Trump's tweets
+trump_bigrams <- tweets2 %>% 
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% 
+  group_by(source) %>% 
+  count(bigram, sort = TRUE)
+
+# Remove stop words
+bigrams_separated <- trump_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+trump_bigrams_final <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ") %>% 
+  filter(bigram != "https t.co") %>% 
+  arrange(desc(source, n)) %>% 
+  top_n(10)
+
+head(trump_bigrams_final)
+
+# Visualization of top 10 bigrams across the different sources
+trump_bigrams_final %>% 
+  ungroup %>% 
+  mutate(phrase = factor(bigram, levels = rev(unique(bigram)))) %>%
+  ggplot(aes(phrase, n, fill = source)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~source, ncol = 2, scales = "free_y") +
+  labs(y = "Number of Bigrams", x = NULL) +
+  ggtitle("Top 10 Bigrams in Android and iPhone Trump Tweets") +
+  coord_flip()
+```
+
+
+\newpage
+2c. Consider the sentiment.  Compute the proportion of words among the tweets within each source classified as "angry" and the proportion of words classified as "joy"  based on the NRC lexicon.  How does the proportion of "angry" and "joy" words compare between the two sources?  What about "positive" and "negative" words?  
+
+> ANSWER: 
+
+```{r}
+
+
+```
+
+
+\newpage
+2d. Lastly, based on your responses above, do you think there is evidence to support Robinson's claim that Trump only writes the (angrier) Android half of the tweets from realDonaldTrump?  In 2-4 sentences, please explain.
+
+> ANSWER: 
+
