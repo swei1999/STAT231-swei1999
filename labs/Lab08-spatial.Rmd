@@ -1,6 +1,6 @@
 ---
 title: 'Lab 8 - Introduction to Working with Spatial Data'
-author: "Your Name Here"
+author: "Sean Wei"
 date: "October 8, 2020"
 always_allow_html: yes
 output:
@@ -187,7 +187,7 @@ First, we load the data and conduct a little data wrangling to get a dataset wit
 
 ```{r}
 # load chronicle data from July 2020
-path_in <- "C:/Users/kcorreia/Dropbox (Amherst College)/Teaching/Fall 2020/Stat231/R Labs/data"
+path_in <- "/Users/seanwei/Desktop/STAT231-swei1999/data"
 
 college_plans0 <- read_csv(paste0(path_in, "/chronicle_plans.csv"))
 
@@ -373,7 +373,7 @@ ggplot() +
 
 Note that not all of the institutions in the Chronicle of Higher Education's file matched to an institution in the IPEDS file.  For instance, the Chronicle file has one row for "Arizona State University", but the IPEDS file but has multiple rows for the same university to represent the location of the different campuses.  What other types of mismatches are there?  Can you think about how to clean up the mismatches?
 
-> ANSWER:
+> ANSWER: Grad school/PHD. Off the top of my head, you can gsub to search for patterns of - followed by text and then replace that with an empty string, but that would screw up colleges with a dash in the actual name, so a better solution is needed.
 
 ```{r}
 college_plans %>% 
@@ -418,7 +418,7 @@ Code for each is given below.  JUST CHOOSE ONE to focus on.  If you post your im
 #library(fivethirtyeight)
 #hate_crimes <- fivethirtyeight::hate_crimes
 
-# example of another dataset with state information from 1977 
+# example of another dataset with state information from 1977
 # from the datasets package loaded above
 #states_1977 <- as.data.frame(state.x77) %>%
 #  add_rownames(var = "State") %>%
@@ -430,6 +430,26 @@ Code for each is given below.  JUST CHOOSE ONE to focus on.  If you post your im
 #                                        , sheet = 1
 #                                        , skip = 7) %>%
 #  janitor::clean_names()
+```
+
+```{r}
+library(gapminder)
+library(tmap)
+library(tmaptools)
+data(gapminder)
+
+gapminder <- gapminder %>%  
+  filter(continent == "Europe") %>% 
+  sample_n(20) %>% 
+  rename(query = country)
+
+coordinates <- tmaptools::geocode_OSM(c(as.vector(t(gapminder["query"][, ]))),
+                                 as.sf = T)
+
+gapminder <- inner_join(gapminder, coordinates)
+
+ggplot() +
+  geom_polygon(gapminder, aes(x = lon, y = lat))
 ```
 
 
