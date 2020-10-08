@@ -196,7 +196,7 @@ bigrams_filtered <- bigrams_separated %>%
 trump_bigrams_final <- bigrams_filtered %>%
   unite(bigram, word1, word2, sep = " ") %>% 
   filter(bigram != "https t.co") %>% 
-  arrange(desc(source, n)) %>% 
+  arrange(desc(n)) %>% 
   top_n(10)
 
 head(trump_bigrams_final)
@@ -235,12 +235,12 @@ sentiments <- c("anger", "joy", "negative", "positive")
 # Get sentiment proportions of Android
 android_sentiments <- total_sentiments(nrc, android)
 rownames(android_sentiments) <- android_sentiments$sentiment # to avoid using magic #s
-android_sentiments <- c(android_sentiments[sentiments, ]$total/sum(android_sentiments$total))
+android_sentiments <- c(android_sentiments[sentiments, ]$total/sum(android$n))
 
 # Get sentiment proportions of iPhone
 iphone_sentiments <- total_sentiments(nrc, iphone)
 rownames(iphone_sentiments) <- iphone_sentiments$sentiment # to avoid using magic #s
-iphone_sentiments <- c(iphone_sentiments[sentiments, ]$total/sum(iphone_sentiments$total))
+iphone_sentiments <- c(iphone_sentiments[sentiments, ]$total/sum(iphone$n))
 
 # Provide table of all the values
 tibble(

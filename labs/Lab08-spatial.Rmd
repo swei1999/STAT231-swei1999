@@ -1,0 +1,479 @@
+---
+title: 'Lab 8 - Introduction to Working with Spatial Data'
+author: "Your Name Here"
+date: "October 8, 2020"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes 
+editor_options: 
+  chunk_output_type: inline
+---
+  
+```{r, setup, include=FALSE}
+#options(xtable.comment = FALSE)
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small",   # slightly smaller font for code
+  message=FALSE)  # suppress non-warning messages
+```
+
+# Packages
+
+In this lab we will work with the some familiar packages and some new packages.  There primary new packages we'll be working with for mapping is: 
+
+(1) the `maps` package, which provides the spatial information for a (VERY) limited number of countries
+(2) the `leaflet` package, which allows for the creation of dynamic maps
+
+```{r message=FALSE}
+library(tidyverse) 
+library(datasets)
+library(viridis)
+
+library(maps)
+library(leaflet)
+```
+
+# Spatial Structure
+
+The `map_data` function is provided by the `ggplot2` package.  The first argument in the function is `map`, which names a map provided by the `maps` package.  The `region` argument can be used to identify subregions to include.  The default for the `region` argument is ".", and includes all subregions.
+
+```{r}
+#help(package='maps')
+
+world_map <- map_data(map = "world"
+                      , region = ".")
+
+ggplot(world_map, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  # remove background color and ticks
+  theme_void()  +
+  # make aspect ratio fixed
+  coord_fixed(ratio = 1.3) 
+```
+
+Check out some of the other maps included in the maps package:
+
+```{r}
+# france
+france <- map_data(map = "france"
+                      , region = ".")
+
+ggplot(france, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3)
+
+# new zealand
+nz <- map_data(map = "nz"
+              , region = ".")
+
+ggplot(nz, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) 
+
+# counties in the US
+usa_counties <- map_data(map = "county"
+                      , region = ".")
+
+ggplot(usa_counties, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) 
+
+# states in the US
+usa_states <- map_data(map = "state"
+                       , region = ".") 
+
+ggplot(usa_states, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) 
+
+# albers projection
+ggplot(usa_states, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  coord_map(projection = "albers", 
+            parameters = c(lat0 = 20, lat1 = 50)
+            , wrap = TRUE)
+
+
+# counties in a given state (e.g., Massachusetts)
+ma_counties <- map_data(map = "county"
+                      , region = "massachusetts")
+
+ggplot(ma_counties, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  coord_map(projection = "albers", 
+            parameters = c(lat0 = 41, lat1 = 42)
+            , wrap = TRUE)
+```
+
+### adding color
+
+We can change the colors of the lines or fill as we usually do in `ggplot` with the `color` and `fill` options.
+
+```{r}
+# no fill, change line color
+ggplot(world_map, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill=NA, colour = "black") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) 
+
+# fill world map by region (country)
+ggplot(world_map, aes(x = long, y = lat, group = group
+                      , fill = region)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  guides(fill = FALSE) # remove legend!
+
+# fill usa map by region (state)
+ggplot(usa_states, aes(x = long, y = lat, group = group
+                      , fill = region)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  coord_map(projection = "albers", 
+            parameters = c(lat0 = 20, lat1 = 50)
+            , wrap = TRUE) +
+  guides(fill = FALSE)
+```
+
+### "zooming" in
+
+If we only wanted to plot a certain area, we could filter the dataset by that area, or we could keep all the data but zoom in on the area using the `xlim` and `ylim` options in `coord_fixed`.  Note that `xlim` corresponds to limits on the x-axis (latitude), and `ylim` corresponds to limits on the y-axis (longitude).
+
+```{r}
+ggplot(usa_states, aes(x = long, y = lat, group = group
+                      , fill = region)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(xlim = c(-80, -60),  ylim = c(40, 50)
+             , ratio = 1.3) +
+   # remove legend!
+  guides(fill = FALSE)
+```
+
+
+# Adding information to the map
+
+## Choropleths 
+
+Often times, we may want to shade or color regions based on the value of a variable.  Usually the process to do this is:
+
+(1) identify a data source that provides the correct spatial information needed (this may be in the form of a shapefile, or using the `maps` package, for instance)
+(2) identify a data source that provides the variable of interest that you want to color the map by
+(3) join the two sources (this can be harder than it sounds!)
+(4) create map with `ggplot`
+
+### the data - college re-opening plans from July 2020
+
+As an example, let's consider data collected by The Chronicle for Higher Education on Colleges' reopening plans for Fall 2020.  The data file we have was downloaded in July 2020, so reflect the institutions' reopening plans as of July 2020.
+
+Source: https://www.chronicle.com/article/heres-a-list-of-colleges-plans-for-reopening-in-the-fall
+
+Let's make a map of the US, with each state colored by the proportion of institutions in the state that were planning to be in person this Fall as of July.
+
+First, we load the data and conduct a little data wrangling to get a dataset with one row per state.
+
+```{r}
+# load chronicle data from July 2020
+path_in <- "C:/Users/kcorreia/Dropbox (Amherst College)/Teaching/Fall 2020/Stat231/R Labs/data"
+
+college_plans0 <- read_csv(paste0(path_in, "/chronicle_plans.csv"))
+
+college_plans <- college_plans0 %>%
+  extract(col = X.1, into = "plans0"
+          , regex = ">(.*)<"
+          , remove = FALSE) %>%
+  mutate(plans = case_when(!is.na(plans0) ~ plans0
+                           , TRUE ~ X.1)) %>%
+  # remove 7 colleges with no helpful info
+  filter(!(plans == "Link" | str_detect(plans, "href")))
+
+college_plans %>% count(plans)
+
+# compute proportion planning for in-person by state
+college_plans_state <- college_plans %>%
+  group_by(State, plans) %>%
+  summarise(n_inperson = n()) %>%
+  filter(plans == "Planning for in-person") %>%
+  left_join( filter(college_plans) %>%
+               group_by(State) %>% 
+               summarize(n_schools = n())
+             , by = "State" ) %>%
+  mutate(prop_inperson = n_inperson/n_schools)
+
+head(college_plans_state)
+head(usa_states)
+```
+
+Next, we combine the state-level college planning information with the state-level mapping information.  The Chronicle of Higher Education dataset has a variable that contains the two-level abbreviations for the states (e.g., "MA") whereas the state variable in the mapping dataset includes the full name of the state in lowercase letters (e.g. "massachusetts").  We can use the `state` dataset in the `datasets` package (also used in Lab03-tidy-wrangle) to connect the state abbreviations to the state names. 
+
+```{r}
+# state objects should appear in your Environment pane
+data(state) 
+
+# creates a data frame with state info
+state_info <- data.frame(state_full = tolower(state.name)
+                         , State = state.abb
+                         , Region = state.region)
+
+head(college_plans_state)
+head(state_info)
+head(usa_states)
+
+# add full name of state to chronicle dataset 
+# then merge with mapping dataset
+college_plans_map <- college_plans_state %>%
+  left_join(state_info, by = "State") %>%
+  right_join(usa_states, by = c("state_full" = "region"))
+
+head(college_plans_map)
+```
+
+Now, we can create the choropleth with `ggplot`!
+
+```{r}
+ggplot(college_plans_map, aes(x = long, y = lat, group = group
+                      , fill = prop_inperson)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of colleges planning for in-person") +
+  theme(legend.position="bottom")
+
+# change color scheme using brewer palettes
+# use distiller for continuous scale
+# add direction = "horizantle" to reverse order of colors applied
+ggplot(college_plans_map, aes(x = long, y = lat, group = group
+                      , fill = prop_inperson)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of colleges planning for in-person") +
+  theme(legend.position="bottom") +
+  #scale_fill_distiller(palette = "Spectral")  
+  #scale_fill_distiller(palette = "YlGnBu", direction = "horizantle") 
+  scale_fill_distiller(palette = "BuPu", direction = "horizantle")
+
+# change color scheme using viridis palettes
+ggplot(college_plans_map, aes(x = long, y = lat, group = group
+                      , fill = prop_inperson)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(title = "Proportion of colleges planning for in-person learning for Fall 2020, by state*"
+       , subtitle = "as of July 2020"
+       , caption = "* States in grey have no data"
+       , fill = "") +
+  scale_fill_viridis(option = "magma", direction = -1) 
+  #scale_fill_viridis(option = "plasma", direction = -1)
+```
+
+## Proportional Symbol and Dot Density
+### adding points to the map
+
+Instead of summarizing the college plans across institutions in a given state, we may instead want to plot a point for every college and add some visual cue to indicate the individual colleges' plans (e.g., color the points by plan category).  To do this requires getting information on the latitutde and longitude of each of the institutions.  This information is not included in the Chronicle dataset, so we need to find it from somewhere else.  The National Center for Education Statistics collects detailed location information for all of the higher education institutions in the US, and makes the data publicly available through [IPEDS](https://nces.ed.gov/ipeds/datacenter/Data.aspx).  
+
+
+```{r}
+college_location <- read_csv(paste0(path_in, "/ipeds_directory_info.csv")) %>%
+  janitor::clean_names()
+
+head(college_location)
+head(college_plans)
+
+college_all <- college_plans %>%
+  left_join(college_location, by = c("Institution" = "institution_name")) %>%
+  rename(long = longitude_location_of_institution_hd2019
+        , lat = latitude_location_of_institution_hd2019)
+ 
+college_all %>% select(Institution, long, lat, plans) %>% head()
+
+# note the use of two different datasets (specified in geom_polygon and geom_point)
+# but that both x and y vars are the same
+ggplot() +
+  # add state shapes for backdrop
+  geom_polygon(data = usa_states, aes(x = long, y = lat, group = group)
+               , color = "black", fill = "white") +
+  # add points for the colleges
+  geom_point(data = college_all, aes(x = long, y = lat
+                                     , color = plans))+
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(title = "College Plans for Fall 2020"
+       , subtitle = "as of July 2020"
+       , color = "") +
+  scale_color_brewer(palette = "Dark2") 
+
+# sorry, Hawaii :(
+ggplot() +
+  # add state shapes for backdrop
+  geom_polygon(data = usa_states, aes(x = long, y = lat, group = group)
+               , color = "black", fill = "white") +
+  # add points for the colleges
+  geom_point(data = filter(
+                      college_all, Institution != "Hawaii Pacific University"
+                      )
+             , aes(x = long, y = lat, color = plans)) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(title = "College Plans for Fall 2020"
+       , subtitle = "as of July 2020"
+       , color = "") +
+  scale_color_brewer(palette = "Dark2") 
+
+# add another piece of information:
+# map type of institution to shape of point
+ggplot() +
+  # add state shapes for backdrop
+  geom_polygon(data = usa_states, aes(x = long, y = lat, group = group)
+               , color = "black", fill = "white") +
+  # add points for the colleges
+  geom_point(data = filter(
+                      college_all, Institution != "Hawaii Pacific University"
+                      )
+             , aes(x = long, y = lat, color = plans, shape = Control)
+             , size = 2) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(title = "College Plans for Fall 2020"
+       , subtitle = "as of July 2020"
+       , color = ""
+       , shape = "") +
+  scale_color_brewer(palette = "Dark2") 
+
+# zoom in on north east
+ggplot() +
+  # add state shapes for backdrop
+  geom_polygon(data = usa_states, aes(x = long, y = lat, group = group)
+               , color = "black", fill = "white") +
+  # add points for the colleges
+  geom_point(data = college_all
+             , aes(x = long, y = lat, color = plans, shape = Control)
+             , size = 2) +
+  theme_void() +
+  coord_fixed(xlim = c(-80, -60),  ylim = c(40, 50), ratio = 1.3) +
+  labs(title = "College Plans for Fall 2020"
+       , subtitle = "as of July 2020"
+       , color = ""
+       , shape = "") +
+  scale_color_brewer(palette = "Dark2")
+```
+
+Note that not all of the institutions in the Chronicle of Higher Education's file matched to an institution in the IPEDS file.  For instance, the Chronicle file has one row for "Arizona State University", but the IPEDS file but has multiple rows for the same university to represent the location of the different campuses.  What other types of mismatches are there?  Can you think about how to clean up the mismatches?
+
+> ANSWER:
+
+```{r}
+college_plans %>% 
+  filter(str_detect(Institution,"Arizona State University")) %>%
+  select(Institution)
+
+college_location %>% 
+  filter(str_detect(institution_name,"Arizona State University")) %>%
+  select(institution_name)
+```
+
+
+ 
+# Your Turn
+
+Big picture:
+
+- Create a choropleth in R
+- Add a title and subtitle to your figure to provide context
+- Add a caption to your figure with your name using the `caption` argument within the `labs` function (see example above on line 277)
+- Copy your image onto the Jamboard [here](https://jamboard.google.com/d/1su9zZWYZxHLcOxj2p42dyKjya-0PCrQVnDQTfd8619o/edit?usp=sharing)
+
+Details:
+
+Create a map of your choosing to display country-level data on a world map, state-level data on a country map (keeping in mind the limitations of what countries are provided in the `maps` package / easily mapped in R), OR county-level data on a country map.
+
+Don't spend too long looking for unit-level data you're interested in.  Rather, I suggest you use data already easily available in an R package below.  For instance:
+
+- the `gapminder` dataset from the `gapminder` package has (a few) country-level variables
+- the `hate_crimes` dataset from the `fivethirtyeight` package has state-level variables
+- the `states` data from the `datasets` package has a matrix of state-level variables in the object `state.x77`
+- unfortunately, the `tidycensus` package (which has county-level data) requires an API key.  But, I've downloaded a file from [this USDA website](https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/) and uploaded it to the "data" folder in our "course-content" repo.  Copy that over to your repo if you want to map county-level data.  
+
+Code for each is given below.  JUST CHOOSE ONE to focus on.  If you post your image to the Jamboard and have extra time, then you're welcome to explore the others.
+
+```{r}
+# example of dataset with country information across years
+#library(gapminder)
+#gapminder <- gapminder::gapminder
+
+# example of dataset with state information from 2013-2014
+#library(fivethirtyeight)
+#hate_crimes <- fivethirtyeight::hate_crimes
+
+# example of another dataset with state information from 1977 
+# from the datasets package loaded above
+#states_1977 <- as.data.frame(state.x77) %>%
+#  add_rownames(var = "State") %>%
+#  janitor::clean_names()
+
+# example of dataset with county-level information from 2019
+# see second tab in excel file for variable explanations
+#county_employment <- readxl::read_excel(paste0(path_in, "/Unemployment.xls")
+#                                        , sheet = 1
+#                                        , skip = 7) %>%
+#  janitor::clean_names()
+```
+
+
+# Done early?  Explore interactivity with `leaflet`
+
+
+```{r, eval = FALSE}
+usa_states_leaflet <- map("state", fill = TRUE, plot = FALSE)
+class(usa_states_leaflet)
+usa_states_leaflet$names
+
+# !!! THESE ARE NOT CORRECT FOR ALL LOCATIONS.  CAN YOU FIGURE OUT A WAY TO FIX IT?
+usa_states_leaflet$n_schools <- college_plans_state$n_schools
+usa_states_leaflet$n_inperson <- college_plans_state$n_inperson
+usa_states_leaflet$prop_inperson <- college_plans_state$prop_inperson
+
+# colorNumeric is a function from the leaflet package
+mypal <- colorNumeric(
+  palette = "YlGnBu",
+  domain = usa_states_leaflet$prop_inperson
+)
+
+# identify Amherst College's location
+ac <- college_location %>%
+  filter(institution_name == "Amherst College")
+
+ac_lat <- ac$latitude_location_of_institution_hd2019
+ac_long <- ac$longitude_location_of_institution_hd2019
+
+# interactive map
+leaflet(data = usa_states_leaflet) %>% 
+  addTiles() %>%
+  setView(-72.5, 42.4, zoom = 5) %>%
+  addMarkers(lat=ac_lat, lng=ac_long, popup="Amherst College") %>%
+  ## fill color is not based on any variable.  Can you figure out how to map it to proportion 
+  ## planning for in-person learning?
+  addPolygons(fillColor = topo.colors(10, alpha = NULL)
+              , stroke = FALSE
+              , popup = paste0("State: ", usa_states_leaflet$names, "<br>"
+                             , "Number of schools reporting: "
+                             , round(usa_states_leaflet$n_schools,0), "<br>"
+                             , "Number of schools planning for in-person learning: "
+                             , round(usa_states_leaflet$n_inperson,0), "<br>"
+                             , "Proportion planning for in-person learning: "
+                             , round(usa_states_leaflet$prop_inperson,2)))
+```
+
