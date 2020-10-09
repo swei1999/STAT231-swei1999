@@ -103,7 +103,7 @@ table(source_count)
 \newpage
 1c. We're going to compare the language used between the Android and iPhone sources, so only want to keep tweets coming from those sources.  Explain what the `extract` function (from the `tidyverse` package) is doing below.  (Note that "regex" stands for "regular expression".)
 
-> ANSWER: The `extract` function is given a regular expression to find groups and then makes a new column based on them. Below, the `extract` function looks for instances that begin with "Twitter for" and then makes a new column with values of what comes after it and before the <. If the statusSource doesn't match this regex, the value of the new column is N/A. For example, if the statusSource was "Twitter for Android," the value in the new source column would be "Android," but if the statusSource was "Twitter Web Client," the value in the new source column would be "N/A."
+> ANSWER: The `extract` function is given a regular expression to find groups and then makes a new column based on them. Below, the `extract` function looks for instances that begin with "Twitter for" and then makes a new column with values of what comes after it and before the <. If the statusSource doesn't match this regex, the value of the new column is N/A. For example, if the statusSource was "...Twitter for Android<," the value in the new source column would be "Android," but if the statusSource was "...Twitter Web Client<," the value in the new source column would be "N/A."
 
 ```{r}
 tweets2 <- tweets %>%
@@ -217,7 +217,7 @@ trump_bigrams_final %>%
 \newpage
 2c. Consider the sentiment.  Compute the proportion of words among the tweets within each source classified as "angry" and the proportion of words classified as "joy"  based on the NRC lexicon.  How does the proportion of "angry" and "joy" words compare between the two sources?  What about "positive" and "negative" words?  
 
-> ANSWER: Looking at the table below, there are not many instances of words that are classified as "anger" or "joy" in Trump's tweets (for both iPhone and Android tweets both classifications consist of less than 10% of the total sentiments). There are more words that are classified as anger than joy in the Android tweets, whereas the proportions are about the same in the iPhone tweets. In a more general sense, there is a slightly larger proportion of positive words in the iPhone tweets, and a slightly larger proportion of negative words in the iPhone tweets. 
+> ANSWER: Looking at the table below, there are not many instances of words that are classified as "anger" or "joy" in Trump's tweets (for both iPhone and Android tweets both classifications consist of less than 6% of the total words). There are a few more words that are classified as anger than joy in the Android tweets, whereas the proportions are about the same in the iPhone tweets. In a more general sense, there is a larger proportion of positive and negative words in the Android tweets compared to the iPhone tweets.
 
 ```{r warning = FALSE, message = FALSE}
 nrc <- get_sentiments("nrc")
@@ -253,4 +253,4 @@ tibble(
 \newpage
 2d. Lastly, based on your responses above, do you think there is evidence to support Robinson's claim that Trump only writes the (angrier) Android half of the tweets from realDonaldTrump?  In 2-4 sentences, please explain.
 
-> ANSWER: There are a few cases where Robinson's claim is supported above. From parts a and b, it is clear that the majority of Android tweets are written to target his opponents, including words and phrases such as "crooked hillary, "lyin ted," "bad judgement," and "bad." However, we also see that the iPhone tweets constantly contain some of these phrases as well, which suggests that Trump writes angrier iPhone tweets as well. Furthermore, in part c, we see that the proportion of angry and negative words in Android tweets are very similar to those of the iPhone tweets. As such, although there is some evidence of Robinson's claim that the Android tweets are angrier, there also is evidence of angry iPhone tweets.
+> ANSWER: Robinson's claim is not entirely supported above. From parts a and b, it is clear that the majority of Android tweets are written to target his opponents, including words and phrases such as "crooked hillary, "lyin ted," "bad judgement," and "bad." However, we also see that the iPhone tweets constantly contain some of these phrases as well, which suggests that Trump writes angrier iPhone tweets as well. Furthermore, in part c, we see that the proportion of angry and negative words in Android tweets are very similar to those of the iPhone tweets. As such, although there is some evidence of Robinson's claim that the Android tweets are angrier, there also is evidence of angry iPhone tweets.
