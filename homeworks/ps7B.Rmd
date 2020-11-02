@@ -122,30 +122,30 @@ stats %>%
 
 1c. Among these same countries, identify the top 5 countries *of origin* and *of destination* (separately) in 1980 using (weighted) degree centrality.  Interpret this information.
 
-> ANSWER: The top 5 countries of origin in 1980 were GBR, IND, KOR, VNM, and USA This means that these were the top 5 most popular countries to migrate from in 1980. The top 5 countries of destination in 1980 were USA, GBR, BRA, IND, and KOR. This means that these were the top 5 most popular countries to migrate to in 1980.
+> ANSWER: The top 5 countries of origin in 1980 were GBR, IND, KOR, VNM, and USA. This means that these were the top 5 most popular countries to migrate from in 1980 of the selected countries. The top 5 countries of destination in 1980 were USA, GBR, BRA, IND, and KOR. This means that these were the top 5 most popular countries to migrate to in 1980 of the selected countries.
 
 ```{r}
-# in
-head(sort.int(strength(MigrationFlows1980, weights = E(MigrationFlows1980)$Y1980, mode = "in"),
+# of origin
+head(sort.int(strength(MigrationFlows1980, weights = E(MigrationFlows1980)$Y1980, mode = "out"), 
               decreasing = TRUE), 5)
 
-# out
-head(sort.int(strength(MigrationFlows1980, weights = E(MigrationFlows1980)$Y1980, mode = "out"), 
+# of destination
+head(sort.int(strength(MigrationFlows1980, weights = E(MigrationFlows1980)$Y1980, mode = "in"),
               decreasing = TRUE), 5)
 ```
 
 
 1d. Among these same countries, identify the top 5 countries *of origin* and *of destination* (separately) in 2000 using (weighted) degree centrality.  Interpret this information.
 
-> ANSWER: The top 5 countries of origin in 2000 were GBR, IND, USA, BRA, and VNM. This means that these were the top 5 most popular countries to migrate from in 2000. The top 5 countries of destination in 2000 were USA, GBR, BRA, IND, and GHA This means that these were the top 5 most popular countries to migrate to in 2000.
+> ANSWER: The top 5 countries of origin in 2000 were GBR, IND, USA, BRA, and VNM. This means that these were the top 5 most popular countries to migrate from in 2000 of the selected countries. The top 5 countries of destination in 2000 were USA, GBR, BRA, IND, and GHA. This means that these were the top 5 most popular countries to migrate to in 2000 of the selected countries.
 
 ```{r}
-# in
-head(sort.int(strength(MigrationFlows2000, weights = E(MigrationFlows2000)$Y2000, mode = "in"),
+# of origin
+head(sort.int(strength(MigrationFlows2000, weights = E(MigrationFlows2000)$Y2000, mode = "out"), 
               decreasing = TRUE), 5)
 
-# out
-head(sort.int(strength(MigrationFlows2000, weights = E(MigrationFlows2000)$Y2000, mode = "out"), 
+# of destination
+head(sort.int(strength(MigrationFlows2000, weights = E(MigrationFlows2000)$Y2000, mode = "in"),
               decreasing = TRUE), 5)
 ```
 
@@ -161,7 +161,7 @@ diameter(MigrationFlows2000, directed = FALSE)
 
 1f. What is the density of this network in 2000? In 1-2 sentences, interpret this value.
 
-> ANSWER: The density of this network in 2000 is ~76.8%, which tells us that is largely concentrated. This means that most countries are connected to many others.
+> ANSWER: The density of this network in 2000 is ~76.8%, which tells us that the network is largely concentrated. This means that most countries are connected to many others.
 
 ```{r}
 graph.density(MigrationFlows2000)
