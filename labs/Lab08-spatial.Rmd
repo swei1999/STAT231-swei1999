@@ -433,23 +433,28 @@ Code for each is given below.  JUST CHOOSE ONE to focus on.  If you post your im
 ```
 
 ```{r}
-library(gapminder)
-library(tmap)
-library(tmaptools)
-data(gapminder)
+library(fivethirtyeight)
+hate_crimes <- fivethirtyeight::hate_crimes
+data(state) 
 
-gapminder <- gapminder %>%  
-  filter(continent == "Europe") %>% 
-  sample_n(20) %>% 
-  rename(query = country)
+# creates a data frame with state info
+state_info <- data.frame(state_full = tolower(state.name)
+                         , state = state.abb
+                         , region = state.region)
+hate_crimes <- filter(hate_crimes, state_abbrev != "DC") 
+hate_crimes <- rename(hate_crimes, State = state_abbrev)
 
-coordinates <- tmaptools::geocode_OSM(c(as.vector(t(gapminder["query"][, ]))),
-                                 as.sf = T)
+map <- hate_crimes %>%
+  left_join(state_info, by = "State") %>%
+  right_join(usa_states, by = c("state_full" = "region"))
 
-gapminder <- inner_join(gapminder, coordinates)
-
-ggplot() +
-  geom_polygon(gapminder, aes(x = lon, y = lat))
+ggplot(map, aes(x = long, y = lat, group = group
+                      , fill = avg_hatecrimes_per_100k_fbi)) +
+  geom_polygon(color = "white") +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Average Hate Crimes per 100K FBI") +
+  theme(legend.position="bottom")
 ```
 
 

@@ -1,0 +1,342 @@
+---
+title: "Stat231: Lab 9 - Unsupervised Learning" 
+author: "Your Name Here"
+date: "November 3, 2020"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggrepel)
+library(GGally)
+
+sessionInfo()
+
+knitr::opts_chunk$set(eval = TRUE
+                      , message = FALSE
+                      , warning = FALSE
+                      , fig.width = 9
+                      , fig.height = 6)
+```
+
+
+# K-means clustering 
+
+## SAT Scores
+
+Let's begin with a simple example of clustering some colleges and universities based on characteristics of an incoming class of first years.  To simplify our look at this data, we will only look at a random sample of schools in Massachusetts, and we will focus on SAT scores for right now.
+
+```{r}
+colleges <- read_csv("data/colleges_subset.csv")
+
+dim(colleges)
+head(colleges)
+
+set.seed(20201103)
+ma_samp <- colleges %>% 
+  mutate(SATMT = as.numeric(SATMT25)
+         , SATVR = as.numeric(SATVR25)) %>%
+  filter(STABBR %in% c("MA") & !is.na(SATMT) 
+            & !is.na(SATVR)) %>%
+  select(STABBR, CITY, INSTNM, SATMT, SATVR) %>%
+  sample_n(15)
+
+ma_samp$INSTNM
+```
+
+First, let's just look at a scatterplot of Math SAT (25th percentile) vs Verbal SAT (25th percentile):
+
+```{r}
+ggplot(data = ma_samp, aes(x = SATMT, y = SATVR)) +
+  geom_point() + 
+  geom_text_repel(aes(label=INSTNM), size = 3) +
+  labs(x = "Math SAT 25th Percentile", y = "Verbal SAT 25th Percentile")
+```
+
+Which schools are most similar?
+
+> ANSWER:  
+
+Do we need to standardize the variables in this case? Why or why not?
+
+> ANSWER:  
+
+Let's use k-means to find two clusters:
+
+```{r}
+set.seed(23)
+vars <- c("SATMT", "SATVR")
+km2_out <- kmeans(ma_samp[,vars], centers=2, nstart=20)
+
+# vector of cluster assignments
+km2_out$cluster
+
+# the centroids for the fit
+km2_out$centers
+
+# add cluster assignment to the data frame
+ma_samp_clust2 <- ma_samp %>%
+  mutate(clust2 = as.character(km2_out$cluster))
+
+# visualize the cluster assignments and centroids
+ggplot(data = ma_samp_clust2, aes(x = SATMT, y = SATVR)) + 
+  geom_point(aes(color = clust2)) +
+  geom_text_repel(aes(label=INSTNM, color = clust2), size = 3) +
+  coord_fixed() +
+  geom_point(data = as.data.frame(km2_out$centers)
+             , aes(x = SATMT, y = SATVR)
+             , pch = "X"
+             , size = 4) +
+  labs(x = "Math SAT 25th Percentile"
+       , y = "Verbal SAT 25th Percentile" 
+       , color = "Cluster Assignment")
+```
+
+What if we used 5 clusters?  Repeat the k-means clustering analysis and visualization above, but with 5 clusters instead of 2.  
+
+```{r}
+set.seed(23)
+km5_out <- kmeans(ma_samp[,vars], centers=5, nstart=20)
+
+# vector of cluster assignments
+km5_out$cluster
+
+# the centroids for the fit
+km5_out$centers
+
+# add cluster assignment to the data frame
+ma_samp_clust5 <- ma_samp %>%
+  mutate(clust5 = as.character(km5_out$cluster))
+
+# visualize the cluster assignments and centroids
+ggplot(data = ma_samp_clust5, aes(x = SATMT, y = SATVR)) + 
+  geom_point(aes(color = clust5)) +
+  geom_text_repel(aes(label=INSTNM, color = clust5), size = 3) +
+  geom_point(data = as.data.frame(km5_out$centers)
+             , aes(x = SATMT, y = SATVR)
+             , pch = "X"
+             , size = 3) +
+  labs(x = "Math SAT 25th Percentile"
+       , y = "Verbal SAT 25th Percentile" 
+       , color = "Cluster Assignment")
+
+```
+
+Which solution will have *smaller* total within-cluster variation?  Why?  Check your answer using the code below.
+
+> ANSWER: 
+
+```{r}
+km2_out$tot.withinss
+km5_out$tot.withinss
+```
+
+
+### Plotting Total Within Cluster Variation vs. K
+
+```{r}
+fig <- matrix(NA, nrow=10, ncol=2)
+
+set.seed(75)
+for (i in 1:10){
+  fig[i,1] <- i
+  fig[i,2] <- kmeans(ma_samp[,4:5]
+                    , centers=i
+                    , nstart=20)$tot.withinss
+}
+
+ggplot(data = as.data.frame(fig), aes(x = V1, y = V2)) +
+  geom_point() + 
+  geom_line() +
+  scale_x_continuous(breaks=c(1:10)) +
+  labs(x = "K", y = expression("Total W"[k]))
+
+ggplot(data = as.data.frame(fig[2:10,]), aes(x = V1, y = V2)) +
+  geom_point() + 
+  geom_line() +
+  scale_x_continuous(breaks=c(1:10)) +
+  labs(x = "K", y = expression("Total W"[k]))
+```
+
+### Standardization
+
+Let's try clustering colleges by more than two variables.  This time, we'll consider the following set of characteristics:
+
+- Admission rate
+- SAT average
+- Median debt at graduation
+- % of graduates majoring in Mathematics & Statistics
+- Average cost of attendance
+
+This will be harder to visualize, but since we only have 15 observations, we can list out which colleges end up in each cluster.
+
+```{r}
+# add the additional variables needed to our sample dataset 
+ma_samp2 <- colleges %>%
+  select(INSTNM, ADM_RATE, SAT_AVG
+         , GRAD_DEBT_MDN, PCIP27, COSTT4_A) %>%
+  # use right_join to only keep the colleges in our original sample
+  right_join(ma_samp, by = "INSTNM") %>%
+  # these variables are character but should be numeric
+  mutate_at(c("ADM_RATE", "SAT_AVG", "GRAD_DEBT_MDN"
+              , "COSTT4_A", "PCIP27"), ~as.numeric(.)) %>%
+  # standardize the numeric variables using the scale() function
+  # scale() subtracts the mean and divides by the standard deviation
+  mutate_if(is.numeric, funs(`std`=scale(.) %>% as.vector())) %>% 
+  janitor::clean_names() %>% 
+  rename(avg_cost = costt4_a
+         , avg_cost_std = costt4_a_std
+         , prop_math = pcip27
+         , prop_math_std = pcip27_std) %>%
+  # drop 3 extra Wentworth rows with missing values
+  # note that kmeans function won't work if there are NAs
+  drop_na()
+
+glimpse(ma_samp2)
+  
+# k=3 
+set.seed(23)
+## on standardized variables
+vars_std <- c("adm_rate_std", "sat_avg_std", "grad_debt_mdn_std", "avg_cost_std", "prop_math_std")
+km3_out_std <- kmeans(ma_samp2[,vars_std]
+                        , centers=3
+                        , nstart=20)
+
+## on unstandardized variables (for comparison)
+vars_unstd <- c("adm_rate", "sat_avg", "grad_debt_mdn", "avg_cost", "prop_math")
+km3_out_unstd <- kmeans(ma_samp2[,vars_unstd]
+                           , centers=3
+                           , nstart=20)
+
+
+# add cluster assignments to the data frame
+ma_samp2_clust3 <- ma_samp2 %>%
+  mutate(clust3_std = as.character(km3_out_std$cluster)
+         ,clust3_unstd = as.character(km3_out_unstd$cluster))
+```
+
+What schools are clustered together when using the standardized variables?  Are the clusters different if the unstandardized variables are used?
+
+> ANSWER: 
+
+```{r}
+# clusters based on standardized vars
+ma_samp2_clust3 %>%
+  select(instnm, clust3_std) %>%
+  arrange(clust3_std)
+
+# clusters based on unstandardized vars
+ma_samp2_clust3 %>%
+  select(instnm, clust3_unstd) %>%
+  arrange(clust3_unstd)
+```
+
+### Extracting meaning
+
+Clustering methods don't just determine clusters based on individual variable values, but how these variables combine with all other variables (e.g. clusters in $R^5$ space for this example). We can also look at a 2D view of the data using a scatterplot matrix. We can use the ggplot "add on" package called `GGally` (loaded at the top of this program) to do this:
+
+```{r}
+head(ma_samp2_clust3)
+vars_unstd
+vars_std
+
+# unstandardized
+ggpairs(data = ma_samp2_clust3
+        , aes(color = clust3_unstd) 
+        , columns = vars_unstd)
+
+# standardized
+ggpairs(data = ma_samp2_clust3
+        , aes(color = clust3_std) 
+        , columns = vars_std
+        , upper = list(continuous = "blank"))
+```
+
+Consider both the density plots and the scatterplots.  What are the defining characteristics of each cluster?
+
+> ANSWER:  
+
+
+\newpage
+## Your Turn!  Customer segmentation
+
+Suppose you're working as a data scientist for a credit card company.  The company wants to divide their customers into groups for targeted marketing.  That is, your tasked with grouping the credit card holders based on their credit card behavior; then, the marketing team at the company will use the information you provide them to help inform their marketing stategy.
+
+You're given a dataset with information on 8,950 credit card holders, with the following variables:
+
+- `CUST_ID`: Identification of Credit Card holder
+- `BALANCE`: Balance amount left in their account to make purchases 
+- `BALANCE_FREQUENCY`: How frequently the Balance is updated, score between 0 and 1 (1 = frequently updated, 0 = not frequently updated)
+- `PURCHASES`: Amount of purchases made from account
+- `PURCHASES_FREQUENCY`: How frequently the Purchases are being made, score between 0 and 1 (1 = frequently purchased, 0 = not frequently purchased)
+- `ONEOFF_PURCHASES`: Maximum purchase amount done in one-go
+- `ONEOFFPURCHASESFREQUENCY`: How frequently purchases are happening in one-go (1 = frequently purchased, 0 = not frequently purchased)
+- `PRC_FULL_PAYMENT`: Percent of full payment paid by user 
+- `INSTALLMENTS_PURCHASES`: Amount of purchase done in installment
+- `PURCHASES_INSTALLMENTS_FREQUENCY`: How frequently purchases in installments are being done (1 = frequently done, 0 = not frequently done)- `CASH_ADVANCE`: Cash in advance given by the user
+- `CASH_ADVANCE_FREQUENCY`: How frequently the cash in advance being paid
+- `CASH_ADVANCE_TRX`: Number of Transactions made with "Cash in Advanced"
+- `PURCHASES_TRX`: Number of purchase transactions made
+- `CREDIT_LIMIT`: Limit of Credit Card for user
+- `PAYMENTS`: Amount of Payment done by user
+- `MINIMUM_PAYMENTS`: Minimum amount of payments made by user
+- `PRC_FULL_PAYMENT`: Percent of full payment paid by user
+- `TENURE`: Tenure of credit card service for user
+
+```{r}
+cc <- read_csv("data/CC GENERAL.csv") 
+
+glimpse(cc)
+summary(cc)
+
+#ggplot(data=cc, aes(x=TENURE)) + geom_histogram()
+```
+
+1. Apply k-means clustering to identify 3 clusters.  Don't forget to remove any rows with missing values, and to standardize the variables first.  How many customers are in each cluster?  
+
+> ANSWER: 
+
+```{r}
+
+```
+
+2. Computer the centroids for each cluster.  Can you identify any distinguishing characteristics about the clusters from these centroid values? 
+
+> ANSWER:  
+
+```{r}
+
+```
+
+3. In 1-3 sentences, explain how you would expect the results to be different had you forgotten to standardize the variables prior to clustering.
+
+> ANSWER:  
+
+4. Identify some primary defining characteristics of each of the three clusters.  Come up with a short name for each cluster based on their defining characteristics. 
+
+Note:  There are so many variables that using `ggpairs` to visualize them all at once produces a figure that isn't legible.  I recommend running `ggpairs` separately for 3-4 variables at a time and/or considering the centroids of the clusters (as you computed above in #2).  
+
+> ANSWER:
+
+```{r}
+
+
+```
+
+5. Create an "elbow" plot to help identify an appropriate number of clusters to create in this analysis.  How many clusters seem reasonable such that there's enough of a decrease in the total within cluster variability to warrant that many clusters but not too many clusters to complicate the analysis.  How might you proceed?
+
+> ANSWER: 
+
+```{r}
+
+
+```
+
+
+# References
+
+College data is from: https://collegescorecard.ed.gov/data/
