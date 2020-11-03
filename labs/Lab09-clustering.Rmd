@@ -311,7 +311,7 @@ km$size
 
 2. Computer the centroids for each cluster.  Can you identify any distinguishing characteristics about the clusters from these centroid values? 
 
-> ANSWER: Cluster 1 seems to be lots of purchases with high credit limits. 
+> ANSWER: Cluster 1 has a lot of values in the postiives while cluster 3 has the majority of it's values in the negatives. 
 
 ```{r}
 km$centers
