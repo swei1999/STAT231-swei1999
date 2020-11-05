@@ -1,0 +1,480 @@
+---
+title: "Stat231: Lab 10 - Simulations" 
+author: "Sean Wei"
+date: "November 5, 2020"
+always_allow_html: yes
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes 
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+# the MASS library has the rmvnorm function to generate
+# multivariate normal random variables
+library(MASS)
+library(plotly)
+library(broom)
+
+sessionInfo()
+
+knitr::opts_chunk$set(eval = TRUE
+                      , message = FALSE
+                      , warning = FALSE
+                      , fig.width = 9
+                      , fig.height = 6)
+```
+
+# Building Blocks
+
+## For loops
+
+We've *seen* some for loops in this class (webscraping of Emily Dickinson poems; creation of elbow plot in k-means clustering), but we haven't spent much time implementing them yet.  We will get that time today!
+
+The most basic format of a for loop:  
+
+```{r, eval=FALSE}
+# for (i in sequence){
+#   #do this
+# }
+```
+
+For instance:
+
+```{r}
+for (i in 1:10){
+  print(10*i)
+}
+```
+
+Often its useful to save results in a vector or dataframe, e.g.:
+
+```{r}
+# initialize empty vector
+vec <- rep(NA, 10)
+# what's in vec to start?
+vec
+
+for (i in 1:10){
+  vec[i] <- print(10*i)
+}
+
+# what's in vec now?
+vec
+```
+
+Note that for loops can be relatively slow depending on what is being done; other methods can also be used for simulations, but won't be covered in today's class.
+
+For simulations, a good motto is:
+
+*Start small; build up*
+
+## Random numbers
+
+There are a number of useful functions in R to help with generating random numbers from specific distributions, including but not limited to:
+
+- Normal: `rnorm(n=, mean=, sd=)` 
+- Multivariate Normal: `MASS::mvrnorm(n=, mu=, Sigma=)`
+- Uniform: `runif(n=, min=, max=)`
+- Poisson: `rpois(n=, lambda=)`
+- Exponential: `rexp(n=, rate=)`
+- Binomial: `rbinom(n=, size=, p=)`
+- (Bernoulli: `rbinom(n=, size=1, p=)`)
+
+```{r}
+# generate two indepedent variables from multivariate normal distribution
+# both with mean 0 and SD 1 (standard normal)
+# mvrnorm is from the MASS package
+mvrnorm(n=1, mu=rep(0,2), Sigma=diag(2))
+rep(0,2)
+diag(2)
+
+# repeat 10000 times and check that we've generated what we intend to
+norm_test <- mvrnorm(n=10000, mu=rep(0,2), Sigma=diag(2)) %>%
+  as.data.frame() %>%
+  rename(X1 = V1, X2 = V2)
+
+# X1 looks like a standard normal dist'n
+ggplot(norm_test, aes(x=X1)) +
+  geom_density()
+
+# X2 looks like a standard normal dist'n
+ggplot(norm_test, aes(x=X2)) +
+  geom_density()
+
+# X1 and X2 appear independent (uncorrelated)
+ggplot(norm_test, aes(x=X1, y=X2)) +
+  geom_point(alpha=0.5)
+
+# 3-D version with plotly
+# kde2d is from the MASS package
+den3d <- kde2d(x=norm_test$X1, y=norm_test$X2)
+plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% 
+  add_surface()
+```
+
+## Distinction: sample size ($n_{obs}$) versus number of simulations ($n_{sim}$)
+
+Often we refer to $n$ as the sample size.  In simulations, we are usually conducting repeated sampling of samples of the same size.  How many samples are we drawing?  To keep the sample size and the number of samples we're drawing (the size of the simulation) distinct, I'll refer to sample size as $n_{obs}$ and simulation size as $n_{sim}$.   
+
+```{r}
+# set the seed for reproducibility!
+set.seed(20201105)
+
+# simulation size
+n_sim <- 1000
+
+# number of observations in each random sample
+n_obs <- 250
+
+# initialize vector to store results
+means <- rep(NA, n_sim)
+
+for (i in 1:n_sim){
+  dat <- rnorm(n=n_obs, mean=10, sd=2)
+  means[i] <- mean(dat)
+}
+
+# sampling distribution of the mean!
+ggplot(data = as.data.frame(means), aes(x=means)) +
+  geom_histogram(color = "black", fill = "grey") +
+  labs(x = "Sample Mean", y = "Number of Samples")
+
+# WHAT IF number of observations in each random sample was a lot smaller?
+n_obs <- 10
+
+# initialize vector to store results
+means <- rep(NA, n_sim)
+
+for (i in 1:n_sim){
+  dat <- rnorm(n=n_obs, mean=10, sd=2)
+  means[i] <- mean(dat)
+}
+
+# sampling distribution of the mean!
+ggplot(data = as.data.frame(means), aes(x=means)) +
+  geom_histogram(color = "black", fill = "grey") +
+  labs(x = "Sample Mean", y = "Number of Samples")
+```
+
+
+# P-hacking
+
+In MDSR Chapter 6 on Professional Ethics, Exercise 6.11 states:
+
+An investigative team wants to winnow the set of variables to include in their final multiple regression model.  They have 100 variables and one outcome measured for $n$=250 observations.  They use the following procedure:
+
+1. Fit each of the 100 bivariate models for the outcome as a function of a single predictor, then
+2. Include all of the significant predictors in the overall model
+
+What does the distribution of the p-value for the overall test look like, assuming that there are *no* associations between any of the predictors and the outcome (all are assumed to be multivariate normal and independent).  Carry out a simulation to check your answer.
+
+Note that this is *not* the most efficient code, but is used to help make the concept of the simulation (and its steps) clearer. 
+
+### start small!
+
+First, let's carry out a simulation that just looks at the distribution of the p-value for the test of a single predictor in a linear regression model with one variable, assuming there is *no* association between the predictor and the outcome.  Assume both the predictor and the outcome have standard normal distributions.
+
+Note that it's helpful to start with a simulation like this, where we *know* what to expect for the result, so we can use it as a check to make sure things are set-up/working correctly to start.
+
+```{r}
+# set the seed for reproducibility!
+set.seed(20201105)
+
+# simulation size
+n_sim <- 1000
+
+# number of observations in each random sample
+n_obs <- 250
+
+#################
+# general steps #
+#################
+
+# identify target visualization and summary:
+#       - histogram of sampling distribution of p-value 
+#                 (should look uniform(0,1) since null is true)
+#       - proportion of p-values that are statistically significant at the 0.05 level
+#                 (should be about 0.05)
+
+# generate x
+x <- rnorm(n=n_obs, mean=0, sd=1)
+
+# generate y (independent of x!)
+y <- rnorm(n=n_obs, mean=0, sd=1)
+
+# fit model
+mod <- lm(y ~ x)
+
+# extract p-value for x
+summary(mod)$coeff
+pval <- (summary(mod)$coeff)["x","Pr(>|t|)"]
+pval
+
+#####################
+# repeat many times #
+#####################
+
+# initialize vector for storing the p-values
+pval <- rep(NA, n_sim)
+head(pval)
+
+for (i in 1:n_sim){
+  # generate x
+  x <- rnorm(n=n_obs, mean=0, sd=1)
+  
+  # generate y (independent of x!)
+  y <- rnorm(n=n_obs, mean=0, sd=1)
+  
+  # fit model
+  mod <- lm(y ~ x)
+  
+  # extract p-value for x
+  pval[i] <- (summary(mod)$coeff)["x","Pr(>|t|)"]
+}
+
+# generate target visualization
+# when null is true, sampling dist'n of p-value is uniform on (0,1)
+pval_dat <- as.data.frame(pval) 
+ggplot(data = as.data.frame(pval), aes(x = pval)) +
+  geom_histogram(color = "black", fill = "grey") +
+  geom_vline(xintercept = 0.05, color = "red") +
+  labs(x = "p-value", y = "Number of samples") 
+
+# generate target summary
+# given null is true, should be around 5%
+pval_dat_sig <- pval_dat %>%
+  mutate(sig05 = ifelse(pval < 0.05, yes = 1, no = 0)) 
+
+mean(pval_dat_sig$sig05)
+```
+
+### then build up
+
+Now, let's add in 99 more potential predictors, so there are 100 predictors in all.  Assume none of the predictors are associated with the outcome OR each other.  Assume all predictors and the outcome are from standard normal distributions.  
+
+What is the probability of falsely rejecting $H_0$ for the first predictor at the 0.05 significance level?  What is the probability of falsely rejecting $H_0$ for each of the other 99 predictors (on an individual basis) at the 0.05 significance level?  
+
+What is the probability that *at least one of the 100 predictors* is statistically significant at the 0.05 level?
+
+> ANSWER:    
+  
+```{r}
+#############################
+# set simulation parameters #
+#############################
+
+# simulation size
+n_sim <- 1000
+
+# number of observations in each random sample
+n_obs <- 250
+
+# number of X predictor variables
+n_x <- 100
+
+
+#################
+# general steps #
+#################
+
+# identify target visualization and summary:
+#       - proportion of p-values for X1 that are < 0.05
+#       - proportion of p-values for X2 - X99 (individually) that are < 0.05
+#       - proportion of simulations that had *at least one* significant p-value across the 100 predictors
+
+# generate 100 predictor variables (assumed to be multivariate normal and independent) for each observation 
+Xs <- mvrnorm(n=n_obs, mu=rep(0, n_x), Sigma=diag(n_x)) %>%
+  as.data.frame() %>%
+  rename_all(list(~str_replace_all(., "V", "X")))
+
+# generate the outcome, Y, which is asssumed to have NO association with any of the predictors and is assumd to be normally distributed.
+dat <- Xs %>%
+  mutate(Y = rnorm(n=n_obs, mean=0, sd=1))
+  
+
+# fit 100 models (one model for each X predictor)
+# and extract p-values 
+pvals <- rep(NA, n_x)
+for (j in 1:n_x){
+  mod <- lm(paste('Y',  '~', paste0("X",j)), data = dat)
+  pvals[j] <- (summary(mod)$coeff)[paste0("X",j),"Pr(>|t|)"]
+}
+
+
+#####################
+# repeat many times #
+#####################
+
+# initialize matrix for storing the p-values
+# columns will be predictors X1-X100, and rows will be the diff iterations
+pvals <- array(NA, dim=c(n_sim,n_x))
+#head(pvals)
+
+for (i in 1:n_sim){
+  # generate 100 predictor variables (assumed to be multivariate normal and independent)     for each observation 
+  Xs <- mvrnorm(n=n_obs, mu=rep(0, n_x)
+                            , Sigma=diag(n_x)) %>%
+    as.data.frame() %>%
+    rename_all(list(~str_replace_all(., "V", "X")))
+
+  # generate the outcome, Y, which is asssumed to have NO association with any of the predictors and is assumd to be normally distributed.
+  dat <- Xs %>%
+    mutate(Y = rnorm(n=n_obs, mean=0, sd=1))
+    
+  # fit 100 models (one model for each X predictor)
+  # and extract p-values 
+  for (j in 1:n_x){
+    mod <- lm(paste('Y',  '~', paste0("X",j)), data = dat)
+    pvals[i,j] <- (summary(mod)$coeff)[paste0("X",j),"Pr(>|t|)"]
+  }
+}
+
+# generate target visualization: distr'n of p-value for X1
+pvals_dat <- as.data.frame(pvals) 
+ggplot(data = pvals_dat, aes(x = V1)) +
+  geom_histogram(color = "black", fill = "grey") +
+  geom_vline(xintercept = 0.05, color = "red") +
+  labs(x = "p-value", y = "Number of samples") 
+
+# generate target summaries: proportion of simulations each predictor was significant
+pvals_sig_ind <- pvals_dat %>%
+  mutate_if(is.numeric, list(~ifelse(. < 0.05, yes = 1, no = 0))) %>%
+  colSums()
+
+pvals_sig_ind/n_sim
+
+mean(pvals_sig_ind/n_sim)
+
+# generate target summaries: proportion of simulations that had *at least one* 
+# significant p-value
+# note that each row repesents one iteration 
+# was there at least one significant p-value in first iteration? second iteration? etc.
+pvals_sig <- pvals_dat %>%
+  mutate_if(is.numeric, list(~ifelse(. < 0.05, yes = 1, no = 0))) %>%
+  rowSums()
+
+length(which(pvals_sig > 0))/n_sim
+```
+
+
+### . . . keep building
+
+Now, follow the process the researchers took in MDSR Exercise 6.11: 
+
+An investigative team wants to winnow the set of variables to include in their final multiple regression model.  They have 100 variables and one outcome measured for $n$=250 observations.  They use the following procedure:
+
+1. Fit each of the 100 bivariate models for the outcome as a function of a single predictor, then
+2. Include all of the significant predictors in the overall model
+
+What does the distribution of the p-value for the overall test\* look like, assuming that there are *no* associations between any of the predictors and the outcome (all are assumed to be multivariate normal and independent).  Carry out a simulation to check your answer.
+
+\* The overall test meaning the overall F-test testing $H_0:$ all $\beta_j = 0$, vs. $H_A:$ at least one $\beta_j \neq 0$.  Note that you can extract this p-value for the overall F-test using the code `glance(model)$p.value`, where the `glance` function is from the `broom` package, e.g.:
+
+```{r}
+test_model <- lm(Y ~ X1 + X2 + X3, data = dat)
+summary(test_model)
+
+# this p-value should correspond to the p-value on the last line of the summary output
+# e.g., F-statistic: ... on .. and .. DF, p-value: ...
+glance(test_model)$p.value
+```
+
+
+1. Before beginning to code, think about the last for loop created as a starting point.  What steps need to be added to that simulation to carry out this simulation?
+
+> ANSWER:  set n = 250, 100 bivariate models
+
+2. Write code to walk through each of the general steps for one iteration (i.e., outside of a for loop).
+
+```{r}
+n_x <- 100
+n_obs <- 250
+
+Xs <- mvrnorm(n=n_obs, mu=rep(0, n_x), Sigma=diag(n_x)) %>%
+  as.data.frame() %>%
+  rename_all(list(~str_replace_all(., "V", "X")))
+dat <- Xs %>%
+  mutate(Y = rnorm(n=n_obs, mean=0, sd=1))
+
+mod <- lm(Y ~ . - Y, data = dat)
+p_val <- glance(mod)$p.value
+```
+
+3. Now incorporate your code above into a for loop to iterate through 1000 simulations.  Be sure to save the p-values from the overall F-tests.
+
+```{r}
+set.seed(2)
+n_x <- 100
+n_obs <- 250
+numsim <- 1000
+
+runsim <- function(n = n_obs, mu = 0, Sigma = 1) {
+  Xs <- mvrnorm(n = n_obs, mu = rep(0, n_x), Sigma = diag(n_x)) %>%
+    as.data.frame() %>%
+    rename_all(list(~str_replace_all(., "V", "X")))
+  dat <- Xs %>%
+    mutate(Y = rnorm(n = n_obs, mean = 0, sd = 1))
+  mod <- lm(Y ~ . - Y, data = dat)
+  return(tibble(p_value = glance(mod)$p.value))
+}
+
+p_values <- mosaic::do(numsim) * runsim()
+```
+
+4. Create a histogram or density plot of the sampling distribution of the p-values from the overall test. What do you notice about the distribution?  What proportion of the overall tests are significant at the 0.05 level?  What about the 0.001 level?  What about the 0.001 level?
+
+> ANSWER: 
+
+```{r}
+ggplot(p_values, aes(x = p_value)) + geom_histogram() +
+  labs(x = "Observed p-values", y = "Count") +
+  ggtitle("Distribution of P-Values")
+
+# this doesn't work for some reason
+binom.test(~ p_value <= 0.05, data = p_values, conf.level = 0.99)
+binom.test(~ p_value <= 0.01, data = p_values, conf.level = 0.99)
+```
+
+
+
+# Done Early?
+
+As you develop more complex simulations, efficiency in code can become more important.  The difference of a few seconds between two ways to do the same thing can result in a simulation that takes one hour or two hours depending on the simulation size.
+
+The function `microbenchmark` from the `microbenchmark` package measures the time it take to evaluate certain code, and can be useful to compare the execution time of different expressions.  By default, `microbenchmark` runs each argument 100 times.  It then returns summary statistics (min, mean, median, max) on the run time for each expression.
+
+For example, in the lab, we used the `mvrnorm` function from the `MASS` package to generate values from a multivariate normal distribution.  There is also a function `rmvnorm` from the `mvtnorm` package that also generates values from a multivariate normal distribution.  Does one of these functions execute faster than the other?
+
+> ANSWER: 
+
+```{r, eval=FALSE}
+library(microbenchmark)
+library(mvtnorm)
+
+set.seed(2020115)
+microbenchmark(mvrnorm(n=n_obs, mu=rep(0, n_x), Sigma=diag(n_x))
+               , rmvnorm(n=n_obs, mean=rep(0, n_x), sigma=diag(n_x)))
+
+# update to execute 200 times
+microbenchmark(mvrnorm(n=n_obs, mu=rep(0, n_x), Sigma=diag(n_x))
+               , rmvnorm(n=n_obs, mean=rep(0, n_x), sigma=diag(n_x))
+               , times = 200)
+
+# add names so the output is easier to read
+microbenchmark(mvrnorm = mvrnorm(n=n_obs, mu=rep(0, n_x), Sigma=diag(n_x))
+            , rmvnorm = rmvnorm(n=n_obs, mean=rep(0, n_x), sigma=diag(n_x))
+            , times = 200)
+```
+
+See if you can write a function and use either one of the `apply` functions or one of the newer `map`ping functions (e.g. `pmap_dfr`; see [MDSR 2nd Edition](https://beanumber.github.io/mdsr2e/ch-simulation.html) to run your simulation instead of using a for loop.  Does it execute faster?   
+
+```{r}
+
+```
+
