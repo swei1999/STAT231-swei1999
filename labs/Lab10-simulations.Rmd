@@ -429,18 +429,16 @@ p_values <- mosaic::do(numsim) * runsim()
 
 4. Create a histogram or density plot of the sampling distribution of the p-values from the overall test. What do you notice about the distribution?  What proportion of the overall tests are significant at the 0.05 level?  What about the 0.001 level?  What about the 0.001 level?
 
-> ANSWER: 
+> ANSWER: There are 57 tests that are significant at the 0.05 level (5.7% success rate) and 12 tests that are significant at the 0.01 level (1.2% success rate). This is to be expected.
 
 ```{r}
 ggplot(p_values, aes(x = p_value)) + geom_histogram() +
   labs(x = "Observed p-values", y = "Count") +
   ggtitle("Distribution of P-Values")
 
-# this doesn't work for some reason
-binom.test(~ p_value <= 0.05, data = p_values, conf.level = 0.99)
-binom.test(~ p_value <= 0.01, data = p_values, conf.level = 0.99)
+mosaic::binom.test(~ p_value <= 0.05, data = p_values, conf.level = 0.99)
+mosaic::binom.test(~ p_value <= 0.01, data = p_values, conf.level = 0.99)
 ```
-
 
 
 # Done Early?
