@@ -46,7 +46,7 @@ knitr::opts_chunk$set(
 
 Baseball players are voted into the Hall of Fame by the members of the Baseball Writers of America Association.  Quantitative criteria are used by the voters, but they are also allowed wide discretion.  The following code identifies the position players who have been elected to the Hall of Fame and tabulates a few basic statistics, include their number of career hits (`tH`), home runs (`tHR`), runs batted in (`tRBI`), and stolen bases (`tSB`).  Use the `kmeans()` function to perform a cluster analysis on these players.  Describe the properties that seem common to each cluster.
 
-> ANSWER:  
+> ANSWER: Cluster 1 has players that have close to 2238.64 career hits, 358.48 home runs, 1365.32 runs batted in, and 96.48 stolen bases. Cluster 2 has players that have close to 3524.889 career hits, 362.5556 home runs, 1857.444 runs batted in, and 373.8889 stolen bases. Cluster 3 has players that have close to 1531.5 career hits, 211 home runs, 917 runs batted in, and 69.5 stolen bases. Cluster 4 has players that have close to 2808.913 career hits, 444.9565 home runs, 1683.087 runs batted in, and 125.7826 stolen bases. Lastly, cluster 5 has players that have close to 2920.105 career hits, 144.9474 home runs, 1085.421 runs batted in, and 511.1053 stolen bases.
 
 ```{r}
 ##### PLEASE DO NOT CHANGE THIS SEED NUMBER
